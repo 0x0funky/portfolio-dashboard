@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日資產統計系統</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>每日資產統計系統</h1>
+        </header>
+
+        <main>
+            <div class="total-display">
+                <h3>總資產: <span id="totalAssets">0</span> USDT</h3>
+            </div>
+            
+            <div class="main-content">
+                <section class="input-section">
+                    <h2>新增資產數據</h2>
+                    <form id="assetForm">
+                        <div class="form-group">
+                            <label for="date">日期:</label>
+                            <input type="date" id="date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="assetName">來源:</label>
+                            <div class="source-input-container">
+                                <input type="text" id="assetName" placeholder="例: 幣安、現金、投資" required>
+                                <button type="button" id="sourceDropdownBtn" class="dropdown-btn">▼</button>
+                                <div id="sourceDropdown" class="source-dropdown">
+                                    <div class="source-options">
+                                        <div class="no-sources">尚無歷史來源</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="amount">金額:</label>
+                            <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="currency">計價貨幣:</label>
+                            <select id="currency">
+                                <option value="USDT" selected>USDT</option>
+                                <option value="USDC">USDC</option>
+                                <option value="USD">USD</option>
+                                <option value="BUSD">BUSD</option>
+                                <option value="TWD">TWD</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit">新增資產</button>
+                    </form>
+                </section>
+
+                <section class="chart-section">
+                    <h2>資產趨勢圖</h2>
+                    <div class="chart-controls">
+                        <select id="chartType">
+                            <option value="line">線圖</option>
+                            <option value="bar">長條圖</option>
+                            <option value="pie">圓餅圖</option>
+                        </select>
+                        <select id="timeRange">
+                            <option value="7">最近7天</option>
+                            <option value="30">最近30天</option>
+                            <option value="90">最近90天</option>
+                            <option value="all">全部</option>
+                        </select>
+                        <button id="toggleYAxis" class="toggle-y-axis-btn">隱藏Y軸數字</button>
+                    </div>
+                    <canvas id="assetChart"></canvas>
+                </section>
+            </div>
+
+            <section class="data-section">
+                <h2>資產數據管理</h2>
+                <div class="data-controls">
+                    <button id="exportBtn">匯出至Excel</button>
+                    <button id="importBtn">匯入數據</button>
+                    <input type="file" id="importFile" accept=".json,.csv" style="display: none;">
+                    <button id="clearFilters">清除所有篩選</button>
+                    <button id="clearBtn">清除所有數據</button>
+                </div>
+
+                <div class="view-toggle">
+                    <button id="calendarViewBtn" class="view-btn active">日曆檢視</button>
+                    <button id="tableViewBtn" class="view-btn">表格檢視</button>
+                </div>
+                
+                <!-- Calendar View -->
+                <div id="calendarView" class="calendar-view">
+                    <div class="calendar-header">
+                        <button id="prevMonth" class="nav-btn">‹</button>
+                        <h3 id="currentMonth"></h3>
+                        <button id="nextMonth" class="nav-btn">›</button>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-weekdays">
+                            <div class="weekday">日</div>
+                            <div class="weekday">一</div>
+                            <div class="weekday">二</div>
+                            <div class="weekday">三</div>
+                            <div class="weekday">四</div>
+                            <div class="weekday">五</div>
+                            <div class="weekday">六</div>
+                        </div>
+                        <div class="calendar-days" id="calendarDays">
+                            <!-- Calendar days will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table View -->
+                <div id="tableView" class="table-view" style="display: none;">
+                    <div class="data-table">
+                        <table id="assetTable">
+                            <thead>
+                                <tr>
+                                    <th class="sortable filterable" data-column="date">
+                                        <div class="header-content">
+                                            <span>日期</span>
+                                            <div class="header-icons">
+                                                <span class="sort-icon">↕</span>
+                                                <span class="filter-icon" data-filter="date">▼</span>
+                                            </div>
+                                        </div>
+                                        <div class="filter-dropdown" id="dateFilterDropdown">
+                                            <div class="filter-content">
+                                                <div class="filter-search">
+                                                    <input type="date" id="dateFromFilter" placeholder="從日期">
+                                                    <input type="date" id="dateToFilter" placeholder="到日期">
+                                                </div>
+                                                <div class="filter-options" id="dateOptions">
+                                                    <label><input type="checkbox" value="all" checked> 全選</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="sortable filterable" data-column="name">
+                                        <div class="header-content">
+                                            <span>來源</span>
+                                            <div class="header-icons">
+                                                <span class="sort-icon">↕</span>
+                                                <span class="filter-icon" data-filter="source">▼</span>
+                                            </div>
+                                        </div>
+                                        <div class="filter-dropdown" id="sourceFilterDropdown">
+                                            <div class="filter-content">
+                                                <div class="filter-search">
+                                                    <input type="text" id="sourceSearchFilter" placeholder="搜尋來源...">
+                                                </div>
+                                                <div class="filter-options" id="sourceOptions">
+                                                    <label><input type="checkbox" value="all" checked> 全選</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th class="sortable filterable" data-column="amount">
+                                        <div class="header-content">
+                                            <span>金額</span>
+                                            <div class="header-icons">
+                                                <span class="sort-icon">↕</span>
+                                                <span class="filter-icon" data-filter="amount">▼</span>
+                                            </div>
+                                        </div>
+                                        <div class="filter-dropdown" id="amountFilterDropdown">
+                                            <div class="filter-content">
+                                                <div class="filter-search">
+                                                    <input type="number" id="amountMinFilter" placeholder="最小金額">
+                                                    <input type="number" id="amountMaxFilter" placeholder="最大金額">
+                                                </div>
+                                                <div class="filter-options" id="amountOptions">
+                                                    <label><input type="checkbox" value="all" checked> 全選</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th>每日變化</th>
+                                    <th class="sortable filterable" data-column="currency">
+                                        <div class="header-content">
+                                            <span>計價幣種</span>
+                                            <div class="header-icons">
+                                                <span class="sort-icon">↕</span>
+                                                <span class="filter-icon" data-filter="currency">▼</span>
+                                            </div>
+                                        </div>
+                                        <div class="filter-dropdown" id="currencyFilterDropdown">
+                                            <div class="filter-content">
+                                                <div class="filter-search">
+                                                    <input type="text" id="currencySearchFilter" placeholder="搜尋幣種...">
+                                                </div>
+                                                <div class="filter-options" id="currencyOptions">
+                                                    <label><input type="checkbox" value="all" checked> 全選</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="edit-modal">
+        <div class="edit-modal-content">
+            <h3>編輯資產</h3>
+            <form id="editAssetForm">
+                <div class="edit-form-group">
+                    <label for="editDate">日期:</label>
+                    <input type="date" id="editDate" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label for="editAssetName">來源:</label>
+                    <div class="source-input-container">
+                        <input type="text" id="editAssetName" placeholder="例: 幣安、現金、投資" required>
+                        <button type="button" id="editSourceDropdownBtn" class="dropdown-btn">▼</button>
+                        <div id="editSourceDropdown" class="source-dropdown">
+                            <div class="source-options">
+                                <div class="no-sources">尚無歷史來源</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label for="editAmount">金額:</label>
+                    <input type="number" id="editAmount" step="0.01" placeholder="0.00" required>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label for="editCurrency">計價貨幣:</label>
+                    <select id="editCurrency">
+                        <option value="USDT">USDT</option>
+                        <option value="USDC">USDC</option>
+                        <option value="USD">USD</option>
+                        <option value="BUSD">BUSD</option>
+                        <option value="TWD">TWD</option>
+                    </select>
+                </div>
+                
+                <div class="edit-modal-buttons">
+                    <button type="button" id="cancelEditBtn" class="cancel-btn">取消</button>
+                    <button type="submit" id="saveEditBtn" class="save-btn">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Daily Details Modal -->
+    <div id="dailyDetailsModal" class="daily-modal">
+        <div class="daily-modal-content">
+            <div class="daily-modal-header">
+                <h3 id="dailyDetailsTitle">每日資產詳情</h3>
+                <button id="closeDailyDetailsBtn" class="close-btn">×</button>
+            </div>
+            <div class="daily-modal-body">
+                <div class="daily-summary">
+                    <div class="summary-item">
+                        <span class="label">總資產:</span>
+                        <span id="dailyTotal" class="value">0 USDT</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">相較前日:</span>
+                        <span id="dailyChange" class="value">--</span>
+                    </div>
+                </div>
+                <div class="daily-assets">
+                    <h4>資產詳細</h4>
+                    <div id="dailyAssetsList" class="assets-list">
+                        <!-- Daily assets will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
