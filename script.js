@@ -571,6 +571,65 @@ class AssetTracker {
         return '\uFEFF' + csvRows.join('\n');
     }
 
+    parseCSV(content) {
+        // Remove BOM if present
+        const cleanContent = content.replace(/^\uFEFF/, '');
+        const lines = cleanContent.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+            throw new Error('CSV 檔案內容不足');
+        }
+        
+        // Skip header line and parse data
+        const dataLines = lines.slice(1);
+        const assets = [];
+        
+        dataLines.forEach((line, index) => {
+            const values = this.parseCSVLine(line);
+            if (values.length >= 4) {
+                const asset = {
+                    date: values[0],
+                    name: values[1].replace(/^"(.*)"$/, '$1'), // Remove quotes
+                    amount: parseFloat(values[2]),
+                    currency: values[3]
+                };
+                
+                // Validate data
+                if (asset.date && asset.name && !isNaN(asset.amount) && asset.currency) {
+                    assets.push(asset);
+                }
+            }
+        });
+        
+        if (assets.length === 0) {
+            throw new Error('沒有有效的資產數據');
+        }
+        
+        return assets;
+    }
+
+    parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        
+        result.push(current);
+        return result;
+    }
+
     handleImport(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -578,7 +637,24 @@ class AssetTracker {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
-                const data = JSON.parse(e.target.result);
+                const content = e.target.result;
+                let data;
+                
+                // Try to parse as JSON first
+                if (file.name.endsWith('.json')) {
+                    data = JSON.parse(content);
+                } else if (file.name.endsWith('.csv')) {
+                    // Parse CSV format
+                    data = this.parseCSV(content);
+                } else {
+                    // Try to determine format by content
+                    try {
+                        data = JSON.parse(content);
+                    } catch {
+                        data = this.parseCSV(content);
+                    }
+                }
+                
                 if (Array.isArray(data) && data.length > 0) {
                     if (confirm(`要匯入 ${data.length} 筆資產數據嗎？這將會覆蓋現有數據。`)) {
                         this.assets = data.map(item => ({
@@ -590,6 +666,9 @@ class AssetTracker {
                         this.updateChart();
                         this.updateTotalDisplay();
                         this.updateSourceDropdown();
+                        if (this.currentView === 'calendar') {
+                            this.renderCalendar();
+                        }
                         this.showMessage(`成功匯入 ${data.length} 筆資產數據！`, 'success');
                     }
                 } else {
