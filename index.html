@@ -10,7 +10,12 @@
 <body>
     <div class="container">
         <header>
-            <h1>每日資產統計系統</h1>
+            <div class="header-content">
+                <h1>每日資產統計系統</h1>
+                <button id="darkModeToggle" class="dark-mode-toggle" aria-label="切換深色模式">
+                    <span class="toggle-icon">🌙</span>
+                </button>
+            </div>
         </header>
 
         <main>
@@ -101,6 +106,11 @@
                         <button id="prevMonth" class="nav-btn">‹</button>
                         <h3 id="currentMonth"></h3>
                         <button id="nextMonth" class="nav-btn">›</button>
+                    </div>
+                    <div class="calendar-display-toggle">
+                        <button id="showTotalAssetsBtn" class="display-toggle-btn active">顯示總資產</button>
+                        <button id="showDailyChangeBtn" class="display-toggle-btn">顯示每日變化</button>
+                        <button id="showBothBtn" class="display-toggle-btn">顯示全部</button>
                     </div>
                     <div class="calendar-grid">
                         <div class="calendar-weekdays">

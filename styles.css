@@ -18,7 +18,6 @@ body {
 }
 
 header {
-    text-align: center;
     margin-bottom: 30px;
     padding: 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -27,9 +26,46 @@ header {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+}
+
 header h1 {
     font-size: 2.5rem;
-    margin-bottom: 10px;
+    margin: 0;
+    flex: 1;
+}
+
+.dark-mode-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.dark-mode-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+}
+
+.toggle-icon {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.dark-mode .toggle-icon {
+    transform: rotate(180deg);
 }
 
 main {
@@ -738,6 +774,135 @@ table tr:hover {
 .nav-btn:hover {
     background: #5a6fd8;
     transform: scale(1.1);
+}
+
+/* Calendar Display Toggle Styles */
+.calendar-display-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 2px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.display-toggle-btn {
+    padding: 8px 16px;
+    background: #f8f9fa;
+    color: #495057;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.display-toggle-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.display-toggle-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+/* Daily Change Display Styles */
+.daily-change-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 10px;
+    text-align: center;
+}
+
+.daily-change-display .change-label {
+    font-size: 9px;
+    margin-bottom: 2px;
+    opacity: 0.8;
+}
+
+.daily-change-display .change-amount {
+    font-weight: bold;
+    font-size: 10px;
+    margin-bottom: 1px;
+}
+
+.daily-change-display .change-percent {
+    font-size: 8px;
+    opacity: 0.9;
+}
+
+.daily-change-display.positive {
+    color: #28a745;
+}
+
+.daily-change-display.negative {
+    color: #dc3545;
+}
+
+.daily-change-display.neutral {
+    color: #6c757d;
+}
+
+/* Both mode styles */
+.day-assets.both-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 2px;
+}
+
+.total-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1px 0 2px 0;
+    border-bottom: 1px solid #e9ecef;
+    width: 100%;
+}
+
+.change-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 0 0 0;
+    font-size: 8px;
+    text-align: center;
+    width: 100%;
+}
+
+.change-indicator {
+    font-weight: bold;
+    font-size: 8px;
+    line-height: 1.2;
+}
+
+/* Ensure consistent font sizes in both mode */
+.total-section .asset-count {
+    font-size: 10px;
+}
+
+.total-section .total-amount {
+    font-size: 11px;
+}
+
+.change-section.positive {
+    color: #28a745;
+}
+
+.change-section.negative {
+    color: #dc3545;
+}
+
+.change-section.neutral {
+    color: #6c757d;
 }
 
 .calendar-grid {
@@ -1494,4 +1659,432 @@ table tr:hover {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Dark Mode Styles */
+.dark-mode {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+}
+
+.dark-mode .container {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+}
+
+.dark-mode body {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+}
+
+.dark-mode header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+.dark-mode .dark-mode-toggle {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .dark-mode-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .toggle-icon {
+    filter: brightness(0.9);
+}
+
+.dark-mode section {
+    background: #2d3748;
+    color: #f0f0f0;
+    border: 1px solid #4a5568;
+}
+
+.dark-mode .total-display {
+    background: #2d3748;
+    color: #f0f0f0;
+    border: 1px solid #4a5568;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.dark-mode .total-display h3 {
+    color: #f0f0f0;
+}
+
+.dark-mode section h2 {
+    color: #f0f0f0;
+    border-bottom-color: #667eea;
+}
+
+.dark-mode .form-group label {
+    color: #f0f0f0;
+}
+
+.dark-mode .form-group input,
+.dark-mode .form-group select {
+    background: #4a5568;
+    color: #f0f0f0;
+    border-color: #718096;
+}
+
+.dark-mode .form-group input:focus,
+.dark-mode .form-group select:focus {
+    border-color: #667eea;
+    background: #5a6b7d;
+    color: #f0f0f0;
+}
+
+.dark-mode .dropdown-btn {
+    background: #4a5568;
+    color: #f0f0f0;
+    border-color: #718096;
+}
+
+.dark-mode .dropdown-btn:hover {
+    background: #5a6b7d;
+    color: #f0f0f0;
+}
+
+.dark-mode .dropdown-btn.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.dark-mode .source-dropdown {
+    background: #4a5568;
+    border-color: #718096;
+}
+
+.dark-mode .source-option:hover {
+    background: #5a6b7d;
+}
+
+.dark-mode .calendar-view {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    border: 1px solid #4a5568;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .calendar-header h3 {
+    color: #f0f0f0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .weekday {
+    background: linear-gradient(135deg, #4a5568 0%, #5a6b7d 100%);
+    color: #f0f0f0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border: 1px solid #5a6b7d;
+}
+
+.dark-mode .calendar-day {
+    background: linear-gradient(135deg, #2d3748 0%, #374151 100%);
+    border: 2px solid #4a5568;
+    color: #f0f0f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.dark-mode .calendar-day:hover {
+    background: linear-gradient(135deg, #3a4a5c 0%, #4a5568 100%);
+    border-color: #667eea;
+    color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.3);
+}
+
+.dark-mode .calendar-day.other-month {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    color: #718096;
+    opacity: 0.6;
+}
+
+.dark-mode .calendar-day.other-month:hover {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+    color: #718096;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .calendar-day.today {
+    border-color: #ed8936;
+    background: linear-gradient(135deg, #3d2a1a 0%, #5a3f2a 100%);
+    color: #f0f0f0;
+    box-shadow: 0 4px 8px rgba(237, 137, 54, 0.3);
+}
+
+.dark-mode .calendar-day.has-data {
+    background: linear-gradient(135deg, #4a5568 0%, #5a6b7d 100%);
+    color: #f0f0f0;
+    border-color: #6b7f91;
+}
+
+.dark-mode .calendar-day.has-gain {
+    background: linear-gradient(135deg, #1a3b2e 0%, #2d5a42 100%);
+    border-color: #48bb78;
+    color: #f0f0f0;
+    box-shadow: 0 3px 6px rgba(72, 187, 120, 0.2);
+}
+
+.dark-mode .calendar-day.has-gain:hover {
+    box-shadow: 0 6px 15px rgba(72, 187, 120, 0.4);
+}
+
+.dark-mode .calendar-day.has-loss {
+    background: linear-gradient(135deg, #3d1a1a 0%, #5c2b2b 100%);
+    border-color: #f56565;
+    color: #f0f0f0;
+    box-shadow: 0 3px 6px rgba(245, 101, 101, 0.2);
+}
+
+.dark-mode .calendar-day.has-loss:hover {
+    box-shadow: 0 6px 15px rgba(245, 101, 101, 0.4);
+}
+
+.dark-mode .view-btn {
+    background: #4a5568;
+    color: #f0f0f0;
+}
+
+.dark-mode .view-btn:hover {
+    background: #5a6b7d;
+    color: #f0f0f0;
+}
+
+.dark-mode .view-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.dark-mode .display-toggle-btn {
+    background: #4a5568;
+    color: #f0f0f0;
+}
+
+.dark-mode .display-toggle-btn:hover {
+    background: #5a6b7d;
+    color: #f0f0f0;
+}
+
+.dark-mode .display-toggle-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.dark-mode table {
+    background: #2d3748;
+}
+
+.dark-mode table th {
+    background: #4a5568;
+    color: #f0f0f0;
+}
+
+.dark-mode table td {
+    background: #2d3748;
+    color: #f0f0f0;
+    border-color: #4a5568;
+}
+
+.dark-mode table tbody tr:hover {
+    background: #3a4a5c;
+}
+
+.dark-mode .filter-dropdown {
+    background: #4a5568;
+    border-color: #718096;
+}
+
+.dark-mode .filter-dropdown input {
+    background: #5a6b7d;
+    color: #f0f0f0;
+    border-color: #718096;
+}
+
+.dark-mode .filter-dropdown label {
+    color: #f0f0f0;
+}
+
+.dark-mode .filter-dropdown label:hover {
+    background: #5a6b7d;
+}
+
+.dark-mode .edit-modal-content,
+.dark-mode .daily-modal-content {
+    background: #2d3748;
+    color: #f0f0f0;
+}
+
+.dark-mode .daily-modal-header h3 {
+    color: #f0f0f0;
+}
+
+.dark-mode .edit-form-group label {
+    color: #f0f0f0;
+}
+
+.dark-mode .edit-form-group input,
+.dark-mode .edit-form-group select {
+    background: #4a5568;
+    color: #f0f0f0;
+    border-color: #718096;
+}
+
+.dark-mode .daily-change.positive {
+    color: #48bb78;
+}
+
+.dark-mode .daily-change.negative {
+    color: #f56565;
+}
+
+.dark-mode .daily-change.neutral {
+    color: #a0aec0;
+}
+
+.dark-mode .daily-change-display.positive {
+    color: #48bb78;
+}
+
+.dark-mode .daily-change-display.negative {
+    color: #f56565;
+}
+
+.dark-mode .daily-change-display.neutral {
+    color: #a0aec0;
+}
+
+.dark-mode button:not(.dark-mode-toggle):not(.view-btn):not(.display-toggle-btn) {
+    background: linear-gradient(135deg, #4a5568 0%, #5a6b7d 100%);
+    color: #f0f0f0;
+}
+
+.dark-mode button:not(.dark-mode-toggle):not(.view-btn):not(.display-toggle-btn):hover {
+    background: linear-gradient(135deg, #5a6b7d 0%, #6b7f91 100%);
+    color: #f0f0f0;
+}
+
+.dark-mode .edit-btn,
+.dark-mode .delete-btn {
+    background: #4a5568;
+    color: #f0f0f0;
+}
+
+.dark-mode .edit-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+.dark-mode .delete-btn:hover {
+    background: #f56565;
+    color: white;
+}
+
+.dark-mode .save-btn {
+    background: #48bb78;
+    color: white;
+}
+
+.dark-mode .save-btn:hover {
+    background: #38a169;
+    color: white;
+}
+
+.dark-mode .cancel-btn {
+    background: #718096;
+    color: #f0f0f0;
+}
+
+.dark-mode .cancel-btn:hover {
+    background: #4a5568;
+    color: #f0f0f0;
+}
+
+/* Add calendar day content styling for dark mode */
+.dark-mode .day-number {
+    color: #f0f0f0;
+}
+
+.dark-mode .asset-count {
+    color: #f0f0f0;
+}
+
+.dark-mode .total-amount {
+    color: #f0f0f0;
+}
+
+.dark-mode .summary-item .label {
+    color: #f0f0f0;
+}
+
+.dark-mode .summary-item .value {
+    color: #f0f0f0;
+}
+
+.dark-mode .assets-list h4 {
+    color: #f0f0f0;
+}
+
+.dark-mode .asset-info .asset-name {
+    color: #f0f0f0;
+}
+
+.dark-mode .asset-info .asset-details {
+    color: #a0aec0;
+}
+
+.dark-mode .asset-amount {
+    color: #f0f0f0;
+}
+
+/* Dark mode both mode styles */
+.dark-mode .total-section {
+    border-bottom-color: #4a5568;
+}
+
+.dark-mode .change-section.positive {
+    color: #48bb78;
+}
+
+.dark-mode .change-section.negative {
+    color: #f56565;
+}
+
+.dark-mode .change-section.neutral {
+    color: #a0aec0;
+}
+
+.dark-mode .change-indicator {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced calendar day content visibility in dark mode */
+.dark-mode .day-number {
+    color: #f0f0f0;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .asset-count {
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.dark-mode .total-amount {
+    color: #f0f0f0;
+    font-weight: 600;
+}
+
+/* Improved calendar navigation buttons for dark mode */
+.dark-mode .nav-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.dark-mode .nav-btn:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
 }

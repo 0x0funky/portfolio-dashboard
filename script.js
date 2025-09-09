@@ -14,6 +14,8 @@ class AssetTracker {
         this.currentCalendarDate = new Date();
         this.currentView = 'calendar';
         this.yAxisVisible = true;
+        this.calendarDisplayMode = 'totalAssets'; // 'totalAssets', 'dailyChange', or 'both'
+        this.darkMode = this.loadDarkModePreference();
         this.init();
     }
 
@@ -24,6 +26,7 @@ class AssetTracker {
         this.updateChart();
         this.updateTotalDisplay();
         this.setDefaultDate();
+        this.initializeDarkMode();
     }
 
     setupEventListeners() {
@@ -75,6 +78,14 @@ class AssetTracker {
         // Calendar navigation listeners
         document.getElementById('prevMonth').addEventListener('click', () => this.navigateMonth(-1));
         document.getElementById('nextMonth').addEventListener('click', () => this.navigateMonth(1));
+
+        // Calendar display mode toggle listeners
+        document.getElementById('showTotalAssetsBtn').addEventListener('click', () => this.setCalendarDisplayMode('totalAssets'));
+        document.getElementById('showDailyChangeBtn').addEventListener('click', () => this.setCalendarDisplayMode('dailyChange'));
+        document.getElementById('showBothBtn').addEventListener('click', () => this.setCalendarDisplayMode('both'));
+
+        // Dark mode toggle listener
+        document.getElementById('darkModeToggle').addEventListener('click', () => this.toggleDarkMode());
 
         // Daily details modal listeners
         document.getElementById('closeDailyDetailsBtn').addEventListener('click', () => this.closeDailyDetailsModal());
@@ -130,7 +141,7 @@ class AssetTracker {
     }
 
     setDefaultDate() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.formatLocalDate(new Date());
         document.getElementById('date').value = today;
     }
 
@@ -208,7 +219,7 @@ class AssetTracker {
         const currentDate = new Date(asset.date);
         const previousDate = new Date(currentDate);
         previousDate.setDate(currentDate.getDate() - 1);
-        const previousDateStr = previousDate.toISOString().split('T')[0];
+        const previousDateStr = this.formatLocalDate(previousDate);
 
         // Find all previous day assets for the same source
         const previousAssets = this.assets.filter(a => 
@@ -408,6 +419,10 @@ class AssetTracker {
     }
 
     getLineBarChartOptions() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#f0f0f0' : '#666';
+        const gridColor = isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)';
+        
         return {
             responsive: true,
             maintainAspectRatio: false,
@@ -418,13 +433,29 @@ class AssetTracker {
             plugins: {
                 title: {
                     display: true,
-                    text: '每日總資產變化趨勢'
+                    text: '每日總資產變化趨勢',
+                    color: textColor,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
                 },
                 legend: {
                     display: true,
-                    position: 'top'
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        font: {
+                            size: 12
+                        }
+                    }
                 },
                 tooltip: {
+                    backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
                     callbacks: {
                         label: function(context) {
                             if (context.datasetIndex === 0) {
@@ -443,7 +474,21 @@ class AssetTracker {
                     display: true,
                     title: {
                         display: true,
-                        text: '日期'
+                        text: '日期',
+                        color: textColor,
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: gridColor
                     }
                 },
                 y: {
@@ -452,13 +497,25 @@ class AssetTracker {
                     position: 'left',
                     title: {
                         display: this.yAxisVisible,
-                        text: '總資產 (USDT)'
+                        text: '總資產 (USDT)',
+                        color: textColor,
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
                     },
                     ticks: {
                         display: this.yAxisVisible,
+                        color: textColor,
+                        font: {
+                            size: 11
+                        },
                         callback: function(value) {
                             return value.toLocaleString('zh-TW');
                         }
+                    },
+                    grid: {
+                        color: gridColor
                     }
                 },
                 y1: {
@@ -467,13 +524,23 @@ class AssetTracker {
                     position: 'right',
                     title: {
                         display: this.yAxisVisible,
-                        text: '每日變化 (USDT)'
+                        text: '每日變化 (USDT)',
+                        color: textColor,
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
                     },
                     grid: {
                         drawOnChartArea: false,
+                        color: gridColor
                     },
                     ticks: {
                         display: this.yAxisVisible,
+                        color: textColor,
+                        font: {
+                            size: 11
+                        },
                         callback: function(value) {
                             const sign = value >= 0 ? '+' : '';
                             return `${sign}${value.toLocaleString('zh-TW')}`;
@@ -485,19 +552,38 @@ class AssetTracker {
     }
 
     getPieChartOptions() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#f0f0f0' : '#666';
+        
         return {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 title: {
                     display: true,
-                    text: '最新資產來源分布'
+                    text: '最新資產來源分布',
+                    color: textColor,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
                 },
                 legend: {
                     display: true,
-                    position: 'right'
+                    position: 'right',
+                    labels: {
+                        color: textColor,
+                        font: {
+                            size: 12
+                        }
+                    }
                 },
                 tooltip: {
+                    backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
                     callbacks: {
                         label: function(context) {
                             const label = context.label || '';
@@ -544,7 +630,7 @@ class AssetTracker {
         const url = URL.createObjectURL(blob);
         
         link.setAttribute('href', url);
-        link.setAttribute('download', `asset_data_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `asset_data_${this.formatLocalDate(new Date())}.csv`);
         link.style.visibility = 'hidden';
         
         document.body.appendChild(link);
@@ -572,43 +658,91 @@ class AssetTracker {
     }
 
     parseCSV(content) {
+        console.log('CSV content preview:', content.substring(0, 500));
+        
         // Remove BOM if present
         const cleanContent = content.replace(/^\uFEFF/, '');
         const lines = cleanContent.split('\n').filter(line => line.trim());
         
+        console.log('Lines count:', lines.length);
+        console.log('First few lines:', lines.slice(0, 5));
+        
         if (lines.length < 2) {
-            throw new Error('CSV 檔案內容不足');
+            throw new Error(`CSV 檔案內容不足，只有 ${lines.length} 行`);
         }
+        
+        // Detect delimiter (tab or comma)
+        const firstDataLine = lines[1];
+        const delimiter = firstDataLine.includes('\t') ? '\t' : ',';
+        console.log('Detected delimiter:', delimiter === '\t' ? 'TAB' : 'COMMA');
         
         // Skip header line and parse data
         const dataLines = lines.slice(1);
         const assets = [];
+        const errors = [];
         
         dataLines.forEach((line, index) => {
-            const values = this.parseCSVLine(line);
-            if (values.length >= 4) {
+            try {
+                const values = this.parseCSVLine(line, delimiter);
+                console.log(`Line ${index + 2} values:`, values);
+                
+                if (values.length < 4) {
+                    errors.push(`第 ${index + 2} 行欄位不足：只有 ${values.length} 個欄位，需要 4 個`);
+                    return;
+                }
+                
+                // Convert date format from 2025/8/20 to 2025-08-20
+                const dateValue = values[0].trim();
+                const formattedDate = this.formatDateString(dateValue);
+                
                 const asset = {
-                    date: values[0],
-                    name: values[1].replace(/^"(.*)"$/, '$1'), // Remove quotes
-                    amount: parseFloat(values[2]),
-                    currency: values[3]
+                    date: formattedDate,
+                    name: values[1].replace(/^"(.*)"$/, '$1').trim(), // Remove quotes and trim
+                    amount: parseFloat(values[2].trim()),
+                    currency: values[3].trim()
                 };
                 
+                console.log(`Parsed asset from line ${index + 2}:`, asset);
+                
                 // Validate data
-                if (asset.date && asset.name && !isNaN(asset.amount) && asset.currency) {
-                    assets.push(asset);
+                if (!asset.date) {
+                    errors.push(`第 ${index + 2} 行日期無效：'${dateValue}'`);
+                    return;
                 }
+                if (!asset.name) {
+                    errors.push(`第 ${index + 2} 行來源名稱空白`);
+                    return;
+                }
+                if (isNaN(asset.amount) || asset.amount <= 0) {
+                    errors.push(`第 ${index + 2} 行金額無效：'${values[2].trim()}'`);
+                    return;
+                }
+                if (!asset.currency) {
+                    errors.push(`第 ${index + 2} 行幣種空白`);
+                    return;
+                }
+                
+                assets.push(asset);
+            } catch (lineError) {
+                errors.push(`第 ${index + 2} 行解析錯誤：${lineError.message}`);
             }
         });
         
+        console.log('Successfully parsed assets:', assets.length);
+        console.log('Parsing errors:', errors);
+        
         if (assets.length === 0) {
-            throw new Error('沒有有效的資產數據');
+            if (errors.length > 0) {
+                throw new Error(`沒有有效的資產數據。錯誤：${errors.slice(0, 3).join('; ')}`);
+            } else {
+                throw new Error('沒有有效的資產數據');
+            }
         }
         
         return assets;
     }
 
-    parseCSVLine(line) {
+    parseCSVLine(line, delimiter = ',') {
         const result = [];
         let current = '';
         let inQuotes = false;
@@ -618,7 +752,7 @@ class AssetTracker {
             
             if (char === '"') {
                 inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
+            } else if (char === delimiter && !inQuotes) {
                 result.push(current);
                 current = '';
             } else {
@@ -630,6 +764,30 @@ class AssetTracker {
         return result;
     }
 
+    formatDateString(dateStr) {
+        // Convert formats like "2025/8/20" to "2025-08-20"
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const year = parts[0];
+                const month = parts[1].padStart(2, '0');
+                const day = parts[2].padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        }
+        
+        // If already in correct format or other format, return as is
+        return dateStr;
+    }
+
+    formatLocalDate(date) {
+        // Format date as YYYY-MM-DD in local timezone (not UTC)
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     handleImport(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -638,6 +796,10 @@ class AssetTracker {
         reader.onload = (e) => {
             try {
                 const content = e.target.result;
+                console.log('File name:', file.name);
+                console.log('File size:', file.size);
+                console.log('File type:', file.type);
+                
                 let data;
                 
                 // Try to parse as JSON first
@@ -675,10 +837,11 @@ class AssetTracker {
                     throw new Error('無效的數據格式');
                 }
             } catch (error) {
-                this.showMessage('匯入失敗：檔案格式不正確', 'error');
+                console.error('Import error:', error);
+                this.showMessage(`匯入失敗：${error.message}`, 'error');
             }
         };
-        reader.readAsText(file);
+        reader.readAsText(file, 'UTF-8');
     }
 
     clearAllData() {
@@ -709,10 +872,10 @@ class AssetTracker {
     }
 
     generateSampleData() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.formatLocalDate(new Date());
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const yesterdayStr = this.formatLocalDate(yesterday);
         
         const sampleAssets = [
             { id: 1, date: '2025-01-15', name: '幣安', amount: 50000, currency: 'USDT' },
@@ -1222,6 +1385,32 @@ class AssetTracker {
         this.renderCalendar();
     }
 
+    setCalendarDisplayMode(mode) {
+        this.calendarDisplayMode = mode;
+        
+        // Update button states
+        const totalAssetsBtn = document.getElementById('showTotalAssetsBtn');
+        const dailyChangeBtn = document.getElementById('showDailyChangeBtn');
+        const bothBtn = document.getElementById('showBothBtn');
+        
+        // Remove active class from all buttons
+        totalAssetsBtn.classList.remove('active');
+        dailyChangeBtn.classList.remove('active');
+        bothBtn.classList.remove('active');
+        
+        // Add active class to selected button
+        if (mode === 'totalAssets') {
+            totalAssetsBtn.classList.add('active');
+        } else if (mode === 'dailyChange') {
+            dailyChangeBtn.classList.add('active');
+        } else if (mode === 'both') {
+            bothBtn.classList.add('active');
+        }
+        
+        // Re-render calendar with new display mode
+        this.renderCalendar();
+    }
+
     renderCalendar() {
         const year = this.currentCalendarDate.getFullYear();
         const month = this.currentCalendarDate.getMonth();
@@ -1258,7 +1447,7 @@ class AssetTracker {
         
         const isCurrentMonth = date.getMonth() === currentMonth;
         const isToday = this.isToday(date);
-        const dateString = date.toISOString().split('T')[0];
+        const dateString = this.formatLocalDate(date);
         const dayAssets = this.assets.filter(asset => asset.date === dateString);
         
         // Add classes
@@ -1275,7 +1464,7 @@ class AssetTracker {
             const currentTotal = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
             const previousDate = new Date(date);
             previousDate.setDate(date.getDate() - 1);
-            const previousDateString = previousDate.toISOString().split('T')[0];
+            const previousDateString = this.formatLocalDate(previousDate);
             const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
             
             if (previousAssets.length > 0) {
@@ -1301,18 +1490,104 @@ class AssetTracker {
             const dayAssetsDiv = document.createElement('div');
             dayAssetsDiv.className = 'day-assets';
             
-            // Asset count
-            const assetCount = document.createElement('div');
-            assetCount.className = 'asset-count';
-            assetCount.textContent = `${dayAssets.length}筆`;
-            dayAssetsDiv.appendChild(assetCount);
-            
-            // Total amount
-            const totalAmount = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
-            const totalDiv = document.createElement('div');
-            totalDiv.className = 'total-amount';
-            totalDiv.textContent = `${totalAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}`;
-            dayAssetsDiv.appendChild(totalDiv);
+            if (this.calendarDisplayMode === 'totalAssets') {
+                // Asset count
+                const assetCount = document.createElement('div');
+                assetCount.className = 'asset-count';
+                assetCount.textContent = `${dayAssets.length}筆`;
+                dayAssetsDiv.appendChild(assetCount);
+                
+                // Total amount
+                const totalAmount = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'total-amount';
+                totalDiv.textContent = `${totalAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}`;
+                dayAssetsDiv.appendChild(totalDiv);
+            } else if (this.calendarDisplayMode === 'dailyChange') {
+                // Calculate daily change for this day
+                const currentTotal = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
+                const previousDate = new Date(date);
+                previousDate.setDate(date.getDate() - 1);
+                const previousDateString = this.formatLocalDate(previousDate);
+                const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
+                const previousTotal = previousAssets.reduce((sum, asset) => sum + asset.amount, 0);
+                
+                const changeDiv = document.createElement('div');
+                changeDiv.className = 'daily-change-display';
+                
+                if (previousAssets.length > 0) {
+                    const change = currentTotal - previousTotal;
+                    const changePercent = previousTotal !== 0 ? ((change / previousTotal) * 100) : 0;
+                    
+                    if (change > 0) {
+                        changeDiv.classList.add('positive');
+                        changeDiv.innerHTML = `<div class="change-label">增加</div><div class="change-amount">+${change.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</div><div class="change-percent">+${changePercent.toFixed(1)}%</div>`;
+                    } else if (change < 0) {
+                        changeDiv.classList.add('negative');
+                        changeDiv.innerHTML = `<div class="change-label">減少</div><div class="change-amount">${change.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</div><div class="change-percent">${changePercent.toFixed(1)}%</div>`;
+                    } else {
+                        changeDiv.classList.add('neutral');
+                        changeDiv.innerHTML = `<div class="change-label">無變化</div><div class="change-amount">0</div>`;
+                    }
+                } else {
+                    changeDiv.classList.add('neutral');
+                    changeDiv.innerHTML = `<div class="change-label">首日</div><div class="change-amount">--</div>`;
+                }
+                
+                dayAssetsDiv.appendChild(changeDiv);
+            } else if (this.calendarDisplayMode === 'both') {
+                // Show both total assets and daily change
+                dayAssetsDiv.classList.add('both-mode');
+                
+                // Total assets section
+                const totalSection = document.createElement('div');
+                totalSection.className = 'total-section';
+                
+                const assetCount = document.createElement('div');
+                assetCount.className = 'asset-count';
+                assetCount.textContent = `${dayAssets.length}筆`;
+                totalSection.appendChild(assetCount);
+                
+                const totalAmount = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'total-amount';
+                totalDiv.textContent = `${totalAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}`;
+                totalSection.appendChild(totalDiv);
+                
+                dayAssetsDiv.appendChild(totalSection);
+                
+                // Daily change section
+                const currentTotal = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
+                const previousDate = new Date(date);
+                previousDate.setDate(date.getDate() - 1);
+                const previousDateString = this.formatLocalDate(previousDate);
+                const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
+                const previousTotal = previousAssets.reduce((sum, asset) => sum + asset.amount, 0);
+                
+                const changeSection = document.createElement('div');
+                changeSection.className = 'change-section';
+                
+                if (previousAssets.length > 0) {
+                    const change = currentTotal - previousTotal;
+                    const changePercent = previousTotal !== 0 ? ((change / previousTotal) * 100) : 0;
+                    
+                    if (change > 0) {
+                        changeSection.classList.add('positive');
+                        changeSection.innerHTML = `<div class="change-indicator">+${change.toLocaleString('zh-TW', { maximumFractionDigits: 0 })} (+${changePercent.toFixed(1)}%)</div>`;
+                    } else if (change < 0) {
+                        changeSection.classList.add('negative');
+                        changeSection.innerHTML = `<div class="change-indicator">${change.toLocaleString('zh-TW', { maximumFractionDigits: 0 })} (${changePercent.toFixed(1)}%)</div>`;
+                    } else {
+                        changeSection.classList.add('neutral');
+                        changeSection.innerHTML = `<div class="change-indicator">無變化</div>`;
+                    }
+                } else {
+                    changeSection.classList.add('neutral');
+                    changeSection.innerHTML = `<div class="change-indicator">首日</div>`;
+                }
+                
+                dayAssetsDiv.appendChild(changeSection);
+            }
             
             dayDiv.appendChild(dayAssetsDiv);
         }
@@ -1350,7 +1625,7 @@ class AssetTracker {
         // Calculate daily change
         const previousDate = new Date(date);
         previousDate.setDate(date.getDate() - 1);
-        const previousDateString = previousDate.toISOString().split('T')[0];
+        const previousDateString = this.formatLocalDate(previousDate);
         const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
         const previousTotal = previousAssets.reduce((sum, asset) => sum + asset.amount, 0);
         
@@ -1509,6 +1784,47 @@ class AssetTracker {
             if (header && this.sortConfig.direction) {
                 header.classList.add(`sort-${this.sortConfig.direction}`);
             }
+        }
+    }
+
+    loadDarkModePreference() {
+        const saved = localStorage.getItem('darkMode');
+        return saved ? JSON.parse(saved) : false;
+    }
+
+    saveDarkModePreference() {
+        localStorage.setItem('darkMode', JSON.stringify(this.darkMode));
+    }
+
+    initializeDarkMode() {
+        if (this.darkMode) {
+            document.body.classList.add('dark-mode');
+        }
+        this.updateDarkModeIcon();
+    }
+
+    toggleDarkMode() {
+        this.darkMode = !this.darkMode;
+        this.saveDarkModePreference();
+        
+        if (this.darkMode) {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+        
+        this.updateDarkModeIcon();
+        
+        // Update chart colors after theme change
+        this.updateChart();
+    }
+
+    updateDarkModeIcon() {
+        const icon = document.querySelector('.toggle-icon');
+        if (this.darkMode) {
+            icon.textContent = '☀️';
+        } else {
+            icon.textContent = '🌙';
         }
     }
 }
