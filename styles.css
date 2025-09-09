@@ -1915,10 +1915,124 @@ table tr:hover {
 .dark-mode .daily-modal-content {
     background: #2d3748;
     color: #f0f0f0;
+    border: 1px solid #4a5568;
+}
+
+.dark-mode .daily-modal {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.dark-mode .edit-modal {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.dark-mode .daily-modal-header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    border-bottom: 1px solid #4a5568;
+    color: #f0f0f0;
 }
 
 .dark-mode .daily-modal-header h3 {
     color: #f0f0f0;
+}
+
+.dark-mode .edit-modal h3 {
+    color: #f0f0f0;
+}
+
+.dark-mode .close-btn {
+    background: #4a5568;
+    color: #f0f0f0;
+    border: 1px solid #718096;
+}
+
+.dark-mode .close-btn:hover {
+    background: #f56565;
+    color: white;
+}
+
+.dark-mode .daily-modal-body {
+    background: #2d3748;
+    color: #f0f0f0;
+}
+
+.dark-mode .daily-summary {
+    background: #374151;
+    border: 1px solid #4a5568;
+}
+
+.dark-mode .summary-item {
+    color: #f0f0f0;
+}
+
+.dark-mode .summary-item .label {
+    color: #e2e8f0;
+}
+
+.dark-mode .summary-item .value {
+    color: #f0f0f0;
+}
+
+.dark-mode .daily-assets h4 {
+    color: #f0f0f0;
+    border-bottom: 1px solid #4a5568;
+}
+
+.dark-mode .assets-list {
+    background: #2d3748;
+}
+
+.dark-mode .asset-item {
+    background: #374151;
+    border: 1px solid #4a5568;
+    color: #f0f0f0;
+}
+
+.dark-mode .asset-item:hover {
+    background: #4a5568;
+}
+
+.dark-mode .asset-info {
+    color: #f0f0f0;
+}
+
+.dark-mode .asset-info .asset-name {
+    color: #f0f0f0;
+    font-weight: 600;
+}
+
+.dark-mode .asset-info .asset-details {
+    color: #a0aec0;
+}
+
+.dark-mode .asset-actions {
+    color: #f0f0f0;
+}
+
+.dark-mode .asset-change {
+    color: #f0f0f0;
+}
+
+/* Additional dark mode fixes for modals */
+.dark-mode .daily-modal-content {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.dark-mode .edit-modal-content {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.dark-mode .daily-modal-body {
+    padding: 20px 25px;
+}
+
+.dark-mode .daily-summary .summary-item .value {
+    font-weight: 600;
+}
+
+.dark-mode .asset-item .asset-amount {
+    color: #f0f0f0;
+    font-weight: 600;
 }
 
 .dark-mode .edit-form-group label {
