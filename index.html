@@ -61,6 +61,11 @@
                             </select>
                         </div>
                         
+                        <div class="form-group">
+                            <label for="notes">備註:</label>
+                            <textarea id="notes" placeholder="選填備註資訊..." rows="2"></textarea>
+                        </div>
+                        
                         <button type="submit">新增資產</button>
                     </form>
                 </section>
@@ -213,6 +218,7 @@
                                             </div>
                                         </div>
                                     </th>
+                                    <th>備註</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
@@ -262,6 +268,11 @@
                         <option value="BUSD">BUSD</option>
                         <option value="TWD">TWD</option>
                     </select>
+                </div>
+                
+                <div class="edit-form-group">
+                    <label for="editNotes">備註:</label>
+                    <textarea id="editNotes" placeholder="選填備註資訊..." rows="2"></textarea>
                 </div>
                 
                 <div class="edit-modal-buttons">

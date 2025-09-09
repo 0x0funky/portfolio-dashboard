@@ -130,13 +130,19 @@ section h2 {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 10px;
     border: 2px solid #ddd;
     border-radius: 5px;
     font-size: 16px;
     transition: border-color 0.3s ease;
+}
+
+.form-group textarea {
+    resize: vertical;
+    font-family: inherit;
 }
 
 .source-input-container {
@@ -225,10 +231,57 @@ section h2 {
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+}
+
+/* Notes cell styling */
+.notes-cell {
+    max-width: 200px;
+    position: relative;
+}
+
+.notes-cell.expanded {
+    max-width: none;
+}
+
+.notes-cell.expanded .notes-text {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.notes-text {
+    display: inline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.expand-notes-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.expand-notes-btn:hover {
+    background: #5a6fd8;
+}
+
+/* Asset notes in daily details */
+.asset-notes {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
 }
 
 button {
@@ -597,7 +650,7 @@ table tr:hover {
 .edit-modal {
     display: none;
     position: fixed;
-    z-index: 2000;
+    z-index: 4000;
     left: 0;
     top: 0;
     width: 100%;
@@ -644,7 +697,8 @@ table tr:hover {
 }
 
 .edit-form-group input,
-.edit-form-group select {
+.edit-form-group select,
+.edit-form-group textarea {
     width: 100%;
     padding: 10px;
     border: 2px solid #ddd;
@@ -653,8 +707,14 @@ table tr:hover {
     transition: border-color 0.3s ease;
 }
 
+.edit-form-group textarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
 .edit-form-group input:focus,
-.edit-form-group select:focus {
+.edit-form-group select:focus,
+.edit-form-group textarea:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
@@ -1722,14 +1782,16 @@ table tr:hover {
 }
 
 .dark-mode .form-group input,
-.dark-mode .form-group select {
+.dark-mode .form-group select,
+.dark-mode .form-group textarea {
     background: #4a5568;
     color: #f0f0f0;
     border-color: #718096;
 }
 
 .dark-mode .form-group input:focus,
-.dark-mode .form-group select:focus {
+.dark-mode .form-group select:focus,
+.dark-mode .form-group textarea:focus {
     border-color: #667eea;
     background: #5a6b7d;
     color: #f0f0f0;
@@ -2005,6 +2067,19 @@ table tr:hover {
     color: #a0aec0;
 }
 
+.dark-mode .asset-notes {
+    color: #a0aec0;
+}
+
+.dark-mode .expand-notes-btn {
+    background: #667eea;
+    color: white;
+}
+
+.dark-mode .expand-notes-btn:hover {
+    background: #5a6fd8;
+}
+
 .dark-mode .asset-actions {
     color: #f0f0f0;
 }
@@ -2040,7 +2115,8 @@ table tr:hover {
 }
 
 .dark-mode .edit-form-group input,
-.dark-mode .edit-form-group select {
+.dark-mode .edit-form-group select,
+.dark-mode .edit-form-group textarea {
     background: #4a5568;
     color: #f0f0f0;
     border-color: #718096;

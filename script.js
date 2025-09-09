@@ -153,7 +153,8 @@ class AssetTracker {
             date: document.getElementById('date').value,
             name: document.getElementById('assetName').value,
             amount: parseFloat(document.getElementById('amount').value),
-            currency: document.getElementById('currency').value
+            currency: document.getElementById('currency').value,
+            notes: document.getElementById('notes').value || ''
         };
 
         this.assets.push(asset);
@@ -194,6 +195,10 @@ class AssetTracker {
 
         this.filteredAssets.forEach(asset => {
             const dailyChange = this.calculateDailyChange(asset);
+            const notes = asset.notes || '';
+            const truncatedNotes = notes.length > 30 ? notes.substring(0, 30) + '...' : notes;
+            const hasLongNotes = notes.length > 30;
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${asset.date}</td>
@@ -201,6 +206,10 @@ class AssetTracker {
                 <td>${asset.amount.toLocaleString('zh-TW', { minimumFractionDigits: 2 })}</td>
                 <td>${dailyChange}</td>
                 <td>${asset.currency}</td>
+                <td class="notes-cell" title="${notes}">
+                    <span class="notes-text">${truncatedNotes}</span>
+                    ${hasLongNotes ? `<button class="expand-notes-btn" onclick="assetTracker.toggleNotesExpansion(${asset.id}, this)">展開</button>` : ''}
+                </td>
                 <td>
                     <button class="edit-btn" onclick="assetTracker.editAsset(${asset.id})">
                         編輯
@@ -878,15 +887,15 @@ class AssetTracker {
         const yesterdayStr = this.formatLocalDate(yesterday);
         
         const sampleAssets = [
-            { id: 1, date: '2025-01-15', name: '幣安', amount: 50000, currency: 'USDT' },
-            { id: 2, date: '2025-01-15', name: '現金', amount: 30000, currency: 'USDT' },
-            { id: 3, date: '2025-01-16', name: '幣安', amount: 52000, currency: 'USDT' },
-            { id: 4, date: '2025-01-16', name: '現金', amount: 28000, currency: 'USDT' },
-            { id: 5, date: yesterdayStr, name: '幣安', amount: 48000, currency: 'USDT' },
-            { id: 6, date: yesterdayStr, name: '現金', amount: 32000, currency: 'USDT' },
-            { id: 7, date: today, name: '幣安', amount: 55000, currency: 'USDT' },
-            { id: 8, date: today, name: '現金', amount: 25000, currency: 'USDT' },
-            { id: 9, date: today, name: '投資', amount: 20000, currency: 'USDT' }
+            { id: 1, date: '2025-01-15', name: '幣安', amount: 50000, currency: 'USDT', notes: '' },
+            { id: 2, date: '2025-01-15', name: '現金', amount: 30000, currency: 'USDT', notes: '' },
+            { id: 3, date: '2025-01-16', name: '幣安', amount: 52000, currency: 'USDT', notes: '' },
+            { id: 4, date: '2025-01-16', name: '現金', amount: 28000, currency: 'USDT', notes: '' },
+            { id: 5, date: yesterdayStr, name: '幣安', amount: 48000, currency: 'USDT', notes: '' },
+            { id: 6, date: yesterdayStr, name: '現金', amount: 32000, currency: 'USDT', notes: '' },
+            { id: 7, date: today, name: '幣安', amount: 55000, currency: 'USDT', notes: '' },
+            { id: 8, date: today, name: '現金', amount: 25000, currency: 'USDT', notes: '' },
+            { id: 9, date: today, name: '投資', amount: 20000, currency: 'USDT', notes: '' }
         ];
 
         if (this.assets.length === 0) {
@@ -1260,6 +1269,7 @@ class AssetTracker {
         document.getElementById('editAssetName').value = asset.name;
         document.getElementById('editAmount').value = asset.amount;
         document.getElementById('editCurrency').value = asset.currency;
+        document.getElementById('editNotes').value = asset.notes || '';
         
         // Show the modal
         document.getElementById('editModal').classList.add('show');
@@ -1276,7 +1286,8 @@ class AssetTracker {
             date: document.getElementById('editDate').value,
             name: document.getElementById('editAssetName').value,
             amount: parseFloat(document.getElementById('editAmount').value),
-            currency: document.getElementById('editCurrency').value
+            currency: document.getElementById('editCurrency').value,
+            notes: document.getElementById('editNotes').value || ''
         };
 
         // Find and update the asset
@@ -1660,10 +1671,14 @@ class AssetTracker {
             
             const assetChange = this.calculateDailyChange(asset);
             
+            const notes = asset.notes || '';
+            const notesDisplay = notes ? `<div class="asset-notes">${notes}</div>` : '';
+            
             assetItem.innerHTML = `
                 <div class="asset-info">
                     <div class="asset-name">${asset.name}</div>
                     <div class="asset-details">${asset.currency}</div>
+                    ${notesDisplay}
                 </div>
                 <div class="asset-amount">
                     ${asset.amount.toLocaleString('zh-TW')} USDT
@@ -1825,6 +1840,27 @@ class AssetTracker {
             icon.textContent = '☀️';
         } else {
             icon.textContent = '🌙';
+        }
+    }
+
+    toggleNotesExpansion(assetId, button) {
+        const asset = this.assets.find(a => a.id === assetId);
+        if (!asset || !asset.notes) return;
+
+        const notesText = button.previousElementSibling;
+        const isExpanded = button.textContent === '收起';
+
+        if (isExpanded) {
+            // 收起：顯示截斷的文字
+            const truncatedNotes = asset.notes.length > 30 ? asset.notes.substring(0, 30) + '...' : asset.notes;
+            notesText.textContent = truncatedNotes;
+            button.textContent = '展開';
+            button.parentElement.classList.remove('expanded');
+        } else {
+            // 展開：顯示完整文字
+            notesText.textContent = asset.notes;
+            button.textContent = '收起';
+            button.parentElement.classList.add('expanded');
         }
     }
 }
