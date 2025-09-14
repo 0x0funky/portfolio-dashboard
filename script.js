@@ -1433,6 +1433,9 @@ class AssetTracker {
         ];
         document.getElementById('currentMonth').textContent = `${year}年 ${monthNames[month]}`;
         
+        // Update monthly revenue
+        this.updateMonthlyRevenue(year, month);
+        
         // Get calendar data
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
@@ -1861,6 +1864,71 @@ class AssetTracker {
             notesText.textContent = asset.notes;
             button.textContent = '收起';
             button.parentElement.classList.add('expanded');
+        }
+    }
+
+    updateMonthlyRevenue(year, month) {
+        // 獲取當月的所有資產資料
+        const monthAssets = this.assets.filter(asset => {
+            const assetDate = new Date(asset.date);
+            return assetDate.getFullYear() === year && assetDate.getMonth() === month;
+        });
+
+        if (monthAssets.length === 0) {
+            document.getElementById('monthlyRevenue').innerHTML = '<span class="neutral">無資料</span>';
+            return;
+        }
+
+        // 計算月初和月末的總資產
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        
+        // 找到月初第一天的資產
+        let monthStartTotal = 0;
+        const firstDayAssets = monthAssets.filter(asset => {
+            const assetDate = new Date(asset.date);
+            return assetDate.getDate() === 1;
+        });
+        
+        if (firstDayAssets.length > 0) {
+            monthStartTotal = firstDayAssets.reduce((sum, asset) => sum + asset.amount, 0);
+        } else {
+            // 如果月初無資料，找最接近的上個月最後一天
+            const prevMonth = new Date(year, month - 1, 0);
+            const prevMonthStr = this.formatLocalDate(prevMonth);
+            const prevMonthAssets = this.assets.filter(asset => asset.date === prevMonthStr);
+            monthStartTotal = prevMonthAssets.reduce((sum, asset) => sum + asset.amount, 0);
+        }
+
+        // 找到月末最後一天的資產
+        const lastDayAssets = monthAssets.filter(asset => {
+            const assetDate = new Date(asset.date);
+            return assetDate.getDate() === lastDay.getDate();
+        });
+        
+        let monthEndTotal = 0;
+        if (lastDayAssets.length > 0) {
+            monthEndTotal = lastDayAssets.reduce((sum, asset) => sum + asset.amount, 0);
+        } else {
+            // 如果月末無資料，找該月最後有資料的一天
+            const sortedDates = [...new Set(monthAssets.map(asset => asset.date))].sort();
+            if (sortedDates.length > 0) {
+                const lastAvailableDate = sortedDates[sortedDates.length - 1];
+                const lastAvailableAssets = monthAssets.filter(asset => asset.date === lastAvailableDate);
+                monthEndTotal = lastAvailableAssets.reduce((sum, asset) => sum + asset.amount, 0);
+            }
+        }
+
+        // 計算營收變化
+        const revenue = monthEndTotal - monthStartTotal;
+        const revenueElement = document.getElementById('monthlyRevenue');
+        
+        if (revenue > 0) {
+            revenueElement.innerHTML = `<span class="positive">+${revenue.toLocaleString('zh-TW', { maximumFractionDigits: 0 })} USDT</span>`;
+        } else if (revenue < 0) {
+            revenueElement.innerHTML = `<span class="negative">${revenue.toLocaleString('zh-TW', { maximumFractionDigits: 0 })} USDT</span>`;
+        } else {
+            revenueElement.innerHTML = `<span class="neutral">0 USDT</span>`;
         }
     }
 }

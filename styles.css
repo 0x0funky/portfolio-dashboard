@@ -816,6 +816,46 @@ table tr:hover {
     color: #333;
 }
 
+/* Monthly Revenue Summary */
+.monthly-summary {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.monthly-revenue {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.summary-value {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.summary-value .positive {
+    color: #28a745;
+}
+
+.summary-value .negative {
+    color: #dc3545;
+}
+
+.summary-value .neutral {
+    color: #6c757d;
+}
+
 .nav-btn {
     background: #667eea;
     color: white;
@@ -1723,369 +1763,398 @@ table tr:hover {
 
 /* Dark Mode Styles */
 .dark-mode {
-    background-color: #1a1a1a;
-    color: #f0f0f0;
+    background-color: #1a1d23;
+    color: #E5E7EB;
 }
 
 .dark-mode .container {
-    background-color: #1a1a1a;
-    color: #f0f0f0;
+    background-color: #1a1d23;
+    color: #E5E7EB;
 }
 
 .dark-mode body {
-    background-color: #1a1a1a;
-    color: #f0f0f0;
+    background-color: #1a1d23;
+    color: #E5E7EB;
 }
 
 .dark-mode header {
-    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    background: linear-gradient(135deg, #2a2f3a 0%, #3c434f 100%);
 }
 
 .dark-mode .dark-mode-toggle {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #374151;
 }
 
 .dark-mode .dark-mode-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(129, 140, 248, 0.3);
+    border-color: #6366F1;
 }
 
 .dark-mode .toggle-icon {
-    filter: brightness(0.9);
+    filter: none;
 }
 
 .dark-mode section {
-    background: #2d3748;
-    color: #f0f0f0;
-    border: 1px solid #4a5568;
+    background: #252b36;
+    color: #F3F4F6;
+    border: 1px solid #2C2C2C;
 }
 
 .dark-mode .total-display {
-    background: #2d3748;
-    color: #f0f0f0;
-    border: 1px solid #4a5568;
+    background: #252b36;
+    color: #F3F4F6;
+    border: 1px solid #2C2C2C;
     border-radius: 10px;
     padding: 20px;
 }
 
 .dark-mode .total-display h3 {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode section h2 {
-    color: #f0f0f0;
-    border-bottom-color: #667eea;
+    color: #F3F4F6;
+    border-bottom-color: #6366F1;
 }
 
 .dark-mode .form-group label {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .form-group input,
 .dark-mode .form-group select,
 .dark-mode .form-group textarea {
-    background: #4a5568;
-    color: #f0f0f0;
-    border-color: #718096;
+    background: #252b36;
+    color: #F3F4F6;
+    border-color: #374151;
 }
 
 .dark-mode .form-group input:focus,
 .dark-mode .form-group select:focus,
 .dark-mode .form-group textarea:focus {
-    border-color: #667eea;
-    background: #5a6b7d;
-    color: #f0f0f0;
+    border-color: #6366F1;
+    background: #252b36;
+    color: #F3F4F6;
+    box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
 }
 
 .dark-mode .dropdown-btn {
-    background: #4a5568;
-    color: #f0f0f0;
-    border-color: #718096;
+    background: #252b36;
+    color: #F3F4F6;
+    border-color: #374151;
 }
 
 .dark-mode .dropdown-btn:hover {
-    background: #5a6b7d;
-    color: #f0f0f0;
+    background: #374151;
+    color: #F3F4F6;
 }
 
 .dark-mode .dropdown-btn.active {
-    background: #667eea;
-    border-color: #667eea;
+    background: #6366F1;
+    border-color: #6366F1;
     color: white;
 }
 
 .dark-mode .source-dropdown {
-    background: #4a5568;
-    border-color: #718096;
+    background: #252b36;
+    border-color: #374151;
 }
 
 .dark-mode .source-option:hover {
-    background: #5a6b7d;
+    background: #374151;
 }
 
 .dark-mode .calendar-view {
-    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
-    border: 1px solid #4a5568;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    background: #252b36;
+    border: 1px solid #2C2C2C;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 .dark-mode .calendar-header h3 {
-    color: #f0f0f0;
+    color: #F3F4F6;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+.dark-mode .monthly-summary {
+    background: linear-gradient(135deg, #252b36 0%, #374151 100%);
+    border-color: #374151;
+}
+
+.dark-mode .summary-label {
+    color: #F3F4F6;
+}
+
+.dark-mode .summary-value {
+    color: #F3F4F6;
+}
+
+.dark-mode .summary-value .positive {
+    color: #22C55E;
+}
+
+.dark-mode .summary-value .negative {
+    color: #EF4444;
+}
+
+.dark-mode .summary-value .neutral {
+    color: #9CA3AF;
+}
+
 .dark-mode .weekday {
-    background: linear-gradient(135deg, #4a5568 0%, #5a6b7d 100%);
-    color: #f0f0f0;
+    background: linear-gradient(135deg, #2a2f3a 0%, #3c434f 100%);
+    color: #F3F4F6;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    border: 1px solid #5a6b7d;
+    border: 1px solid #374151;
 }
 
 .dark-mode .calendar-day {
-    background: linear-gradient(135deg, #2d3748 0%, #374151 100%);
-    border: 2px solid #4a5568;
-    color: #f0f0f0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #252b36;
+    border: 2px solid #374151;
+    color: #F3F4F6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 }
 
 .dark-mode .calendar-day:hover {
-    background: linear-gradient(135deg, #3a4a5c 0%, #4a5568 100%);
-    border-color: #667eea;
-    color: #f0f0f0;
+    background: #374151;
+    border-color: #6366F1;
+    color: #F3F4F6;
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3);
 }
 
 .dark-mode .calendar-day.other-month {
-    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
-    color: #718096;
+    background: #1f242e;
+    color: #6B7280;
     opacity: 0.6;
 }
 
 .dark-mode .calendar-day.other-month:hover {
-    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
-    color: #718096;
+    background: #1f242e;
+    color: #6B7280;
     transform: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dark-mode .calendar-day.today {
-    border-color: #ed8936;
-    background: linear-gradient(135deg, #3d2a1a 0%, #5a3f2a 100%);
-    color: #f0f0f0;
-    box-shadow: 0 4px 8px rgba(237, 137, 54, 0.3);
+    border-color: #F59E0B;
+    background: linear-gradient(135deg, #252b36 0%, #374151 100%);
+    color: #F3F4F6;
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
 }
 
 .dark-mode .calendar-day.has-data {
-    background: linear-gradient(135deg, #4a5568 0%, #5a6b7d 100%);
-    color: #f0f0f0;
-    border-color: #6b7f91;
+    background: linear-gradient(135deg, #252b36 0%, #374151 100%);
+    color: #F3F4F6;
+    border-color: #3B82F6;
 }
 
 .dark-mode .calendar-day.has-gain {
-    background: linear-gradient(135deg, #1a3b2e 0%, #2d5a42 100%);
-    border-color: #48bb78;
-    color: #f0f0f0;
-    box-shadow: 0 3px 6px rgba(72, 187, 120, 0.2);
+    background: linear-gradient(135deg, #252b36 0%, #374151 100%);
+    border-color: #22C55E;
+    color: #F3F4F6;
+    box-shadow: 0 3px 6px rgba(34, 197, 94, 0.2);
 }
 
 .dark-mode .calendar-day.has-gain:hover {
-    box-shadow: 0 6px 15px rgba(72, 187, 120, 0.4);
+    box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
 }
 
 .dark-mode .calendar-day.has-loss {
-    background: linear-gradient(135deg, #3d1a1a 0%, #5c2b2b 100%);
-    border-color: #f56565;
-    color: #f0f0f0;
-    box-shadow: 0 3px 6px rgba(245, 101, 101, 0.2);
+    background: linear-gradient(135deg, #252b36 0%, #374151 100%);
+    border-color: #EF4444;
+    color: #F3F4F6;
+    box-shadow: 0 3px 6px rgba(239, 68, 68, 0.2);
 }
 
 .dark-mode .calendar-day.has-loss:hover {
-    box-shadow: 0 6px 15px rgba(245, 101, 101, 0.4);
+    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
 }
 
 .dark-mode .view-btn {
-    background: #4a5568;
-    color: #f0f0f0;
+    background: #252b36;
+    color: #F3F4F6;
+    border: 1px solid #2C2C2C;
 }
 
 .dark-mode .view-btn:hover {
-    background: #5a6b7d;
-    color: #f0f0f0;
+    background: #374151;
+    color: #F3F4F6;
 }
 
 .dark-mode .view-btn.active {
-    background: #667eea;
+    background: #6366F1;
     color: white;
 }
 
 .dark-mode .display-toggle-btn {
-    background: #4a5568;
-    color: #f0f0f0;
+    background: #252b36;
+    color: #F3F4F6;
+    border: 1px solid #2C2C2C;
 }
 
 .dark-mode .display-toggle-btn:hover {
-    background: #5a6b7d;
-    color: #f0f0f0;
+    background: #374151;
+    color: #F3F4F6;
 }
 
 .dark-mode .display-toggle-btn.active {
-    background: #667eea;
+    background: #6366F1;
     color: white;
 }
 
 .dark-mode table {
-    background: #2d3748;
+    background: #252b36;
 }
 
 .dark-mode table th {
-    background: #4a5568;
-    color: #f0f0f0;
+    background: #374151;
+    color: #F3F4F6;
 }
 
 .dark-mode table td {
-    background: #2d3748;
-    color: #f0f0f0;
-    border-color: #4a5568;
+    background: #252b36;
+    color: #F3F4F6;
+    border-color: #374151;
 }
 
 .dark-mode table tbody tr:hover {
-    background: #3a4a5c;
+    background: #374151;
 }
 
 .dark-mode .filter-dropdown {
-    background: #4a5568;
-    border-color: #718096;
+    background: #252b36;
+    border-color: #374151;
 }
 
 .dark-mode .filter-dropdown input {
-    background: #5a6b7d;
-    color: #f0f0f0;
-    border-color: #718096;
+    background: #252b36;
+    color: #F3F4F6;
+    border-color: #374151;
 }
 
 .dark-mode .filter-dropdown label {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .filter-dropdown label:hover {
-    background: #5a6b7d;
+    background: #374151;
 }
 
 .dark-mode .edit-modal-content,
 .dark-mode .daily-modal-content {
-    background: #2d3748;
-    color: #f0f0f0;
-    border: 1px solid #4a5568;
+    background: #252b36;
+    color: #F3F4F6;
+    border: 1px solid #2C2C2C;
 }
 
 .dark-mode .daily-modal {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(18, 18, 18, 0.8);
 }
 
 .dark-mode .edit-modal {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(18, 18, 18, 0.8);
 }
 
 .dark-mode .daily-modal-header {
-    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
-    border-bottom: 1px solid #4a5568;
-    color: #f0f0f0;
+    background: linear-gradient(135deg, #1E1E1E 0%, #2C2C2C 100%);
+    border-bottom: 1px solid #2C2C2C;
+    color: #F3F4F6;
 }
 
 .dark-mode .daily-modal-header h3 {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .edit-modal h3 {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .close-btn {
-    background: #4a5568;
-    color: #f0f0f0;
-    border: 1px solid #718096;
+    background: #252b36;
+    color: #F3F4F6;
+    border: 1px solid #2C2C2C;
 }
 
 .dark-mode .close-btn:hover {
-    background: #f56565;
+    background: #EF4444;
     color: white;
 }
 
 .dark-mode .daily-modal-body {
-    background: #2d3748;
-    color: #f0f0f0;
+    background: #252b36;
+    color: #F3F4F6;
 }
 
 .dark-mode .daily-summary {
-    background: #374151;
-    border: 1px solid #4a5568;
+    background: #252b36;
+    border: 1px solid #2C2C2C;
 }
 
 .dark-mode .summary-item {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .summary-item .label {
-    color: #e2e8f0;
+    color: #9CA3AF;
 }
 
 .dark-mode .summary-item .value {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .daily-assets h4 {
-    color: #f0f0f0;
-    border-bottom: 1px solid #4a5568;
+    color: #F3F4F6;
+    border-bottom: 1px solid #2C2C2C;
 }
 
 .dark-mode .assets-list {
-    background: #2d3748;
+    background: #252b36;
 }
 
 .dark-mode .asset-item {
-    background: #374151;
-    border: 1px solid #4a5568;
-    color: #f0f0f0;
+    background: #252b36;
+    border: 1px solid #2C2C2C;
+    color: #F3F4F6;
 }
 
 .dark-mode .asset-item:hover {
-    background: #4a5568;
+    background: #374151;
 }
 
 .dark-mode .asset-info {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .asset-info .asset-name {
-    color: #f0f0f0;
+    color: #F3F4F6;
     font-weight: 600;
 }
 
 .dark-mode .asset-info .asset-details {
-    color: #a0aec0;
+    color: #9CA3AF;
 }
 
 .dark-mode .asset-notes {
-    color: #a0aec0;
+    color: #9CA3AF;
 }
 
 .dark-mode .expand-notes-btn {
-    background: #667eea;
+    background: #6366F1;
     color: white;
 }
 
 .dark-mode .expand-notes-btn:hover {
-    background: #5a6fd8;
+    background: #818CF8;
 }
 
 .dark-mode .asset-actions {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .asset-change {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 /* Additional dark mode fixes for modals */
@@ -2106,20 +2175,20 @@ table tr:hover {
 }
 
 .dark-mode .asset-item .asset-amount {
-    color: #f0f0f0;
+    color: #F3F4F6;
     font-weight: 600;
 }
 
 .dark-mode .edit-form-group label {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .edit-form-group input,
 .dark-mode .edit-form-group select,
 .dark-mode .edit-form-group textarea {
-    background: #4a5568;
-    color: #f0f0f0;
-    border-color: #718096;
+    background: #252b36;
+    color: #F3F4F6;
+    border-color: #374151;
 }
 
 .dark-mode .daily-change.positive {
@@ -2131,7 +2200,7 @@ table tr:hover {
 }
 
 .dark-mode .daily-change.neutral {
-    color: #a0aec0;
+    color: #9CA3AF;
 }
 
 .dark-mode .daily-change-display.positive {
@@ -2143,23 +2212,23 @@ table tr:hover {
 }
 
 .dark-mode .daily-change-display.neutral {
-    color: #a0aec0;
+    color: #9CA3AF;
 }
 
 .dark-mode button:not(.dark-mode-toggle):not(.view-btn):not(.display-toggle-btn) {
     background: linear-gradient(135deg, #4a5568 0%, #5a6b7d 100%);
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode button:not(.dark-mode-toggle):not(.view-btn):not(.display-toggle-btn):hover {
     background: linear-gradient(135deg, #5a6b7d 0%, #6b7f91 100%);
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .edit-btn,
 .dark-mode .delete-btn {
-    background: #4a5568;
-    color: #f0f0f0;
+    background: #252b36;
+    color: #F3F4F6;
 }
 
 .dark-mode .edit-btn:hover {
@@ -2184,49 +2253,49 @@ table tr:hover {
 
 .dark-mode .cancel-btn {
     background: #718096;
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .cancel-btn:hover {
-    background: #4a5568;
-    color: #f0f0f0;
+    background: #252b36;
+    color: #F3F4F6;
 }
 
 /* Add calendar day content styling for dark mode */
 .dark-mode .day-number {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .asset-count {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .total-amount {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .summary-item .label {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .summary-item .value {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .assets-list h4 {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .asset-info .asset-name {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 .dark-mode .asset-info .asset-details {
-    color: #a0aec0;
+    color: #9CA3AF;
 }
 
 .dark-mode .asset-amount {
-    color: #f0f0f0;
+    color: #F3F4F6;
 }
 
 /* Dark mode both mode styles */
@@ -2243,7 +2312,7 @@ table tr:hover {
 }
 
 .dark-mode .change-section.neutral {
-    color: #a0aec0;
+    color: #9CA3AF;
 }
 
 .dark-mode .change-indicator {
@@ -2252,7 +2321,7 @@ table tr:hover {
 
 /* Enhanced calendar day content visibility in dark mode */
 .dark-mode .day-number {
-    color: #f0f0f0;
+    color: #F3F4F6;
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -2263,18 +2332,18 @@ table tr:hover {
 }
 
 .dark-mode .total-amount {
-    color: #f0f0f0;
+    color: #F3F4F6;
     font-weight: 600;
 }
 
 /* Improved calendar navigation buttons for dark mode */
 .dark-mode .nav-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
     color: white;
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
 }
 
 .dark-mode .nav-btn:hover {
-    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #818CF8 0%, #A5B4FC 100%);
+    box-shadow: 0 6px 15px rgba(129, 140, 248, 0.4);
 }
