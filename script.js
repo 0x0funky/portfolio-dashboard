@@ -31,6 +31,7 @@ class AssetTracker {
 
     setupEventListeners() {
         document.getElementById('assetForm').addEventListener('submit', (e) => this.handleSubmit(e));
+        document.getElementById('copyYesterdayBtn').addEventListener('click', () => this.copyYesterdayRecords());
         document.getElementById('exportBtn').addEventListener('click', () => this.exportToExcel());
         document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
         document.getElementById('importFile').addEventListener('change', (e) => this.handleImport(e));
@@ -64,11 +65,22 @@ class AssetTracker {
             this.toggleEditSourceDropdown();
         });
 
-        // Close edit modal when clicking outside
-        document.getElementById('editModal').addEventListener('click', (e) => {
-            if (e.target.id === 'editModal') {
+        // Close edit modal when clicking outside (using mousedown/mouseup to prevent accidental closing during text selection)
+        let editModalMouseDownTarget = null;
+        document.getElementById('editModal').addEventListener('mousedown', (e) => {
+            editModalMouseDownTarget = e.target;
+        });
+        document.getElementById('editModal').addEventListener('mouseup', (e) => {
+            if (e.target === document.getElementById('editModal') && 
+                editModalMouseDownTarget === document.getElementById('editModal')) {
                 this.closeEditModal();
             }
+            editModalMouseDownTarget = null;
+        });
+
+        // Prevent modal from closing when interacting with modal content
+        document.querySelector('.edit-modal-content').addEventListener('mousedown', (e) => {
+            e.stopPropagation();
         });
 
         // View toggle listeners
@@ -89,10 +101,23 @@ class AssetTracker {
 
         // Daily details modal listeners
         document.getElementById('closeDailyDetailsBtn').addEventListener('click', () => this.closeDailyDetailsModal());
-        document.getElementById('dailyDetailsModal').addEventListener('click', (e) => {
-            if (e.target.id === 'dailyDetailsModal') {
+        
+        // Close daily details modal when clicking outside (using mousedown/mouseup to prevent accidental closing during text selection)
+        let dailyModalMouseDownTarget = null;
+        document.getElementById('dailyDetailsModal').addEventListener('mousedown', (e) => {
+            dailyModalMouseDownTarget = e.target;
+        });
+        document.getElementById('dailyDetailsModal').addEventListener('mouseup', (e) => {
+            if (e.target === document.getElementById('dailyDetailsModal') && 
+                dailyModalMouseDownTarget === document.getElementById('dailyDetailsModal')) {
                 this.closeDailyDetailsModal();
             }
+            dailyModalMouseDownTarget = null;
+        });
+
+        // Prevent daily details modal from closing when interacting with modal content
+        document.querySelector('.daily-modal-content').addEventListener('mousedown', (e) => {
+            e.stopPropagation();
         });
         
         // Filter dropdown event listeners
@@ -178,6 +203,52 @@ class AssetTracker {
         
         // Restore the date value
         document.getElementById('date').value = currentDate;
+    }
+
+    copyYesterdayRecords() {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        const todayString = today.toISOString().split('T')[0];
+        const yesterdayString = yesterday.toISOString().split('T')[0];
+        
+        // Find all records from yesterday
+        const yesterdayRecords = this.assets.filter(asset => asset.date === yesterdayString);
+        
+        if (yesterdayRecords.length === 0) {
+            alert('昨天沒有找到任何資產記錄');
+            return;
+        }
+        
+        // Check if today already has records
+        const todayRecords = this.assets.filter(asset => asset.date === todayString);
+        if (todayRecords.length > 0) {
+            if (!confirm(`今天已有 ${todayRecords.length} 筆記錄，是否要繼續複製昨天的記錄？`)) {
+                return;
+            }
+        }
+        
+        // Copy yesterday's records with today's date and new IDs
+        const copiedRecords = yesterdayRecords.map(asset => ({
+            ...asset,
+            id: Date.now() + Math.random(), // Generate unique ID
+            date: todayString
+        }));
+        
+        // Add copied records to assets array
+        this.assets.push(...copiedRecords);
+        this.saveAssets();
+        this.applyFilters();
+        this.updateChart();
+        this.updateTotalDisplay();
+        this.updateSourceDropdown();
+        
+        if (this.currentView === 'calendar') {
+            this.renderCalendar();
+        }
+        
+        alert(`成功複製了 ${copiedRecords.length} 筆昨天的記錄到今天`);
     }
 
     loadAssets() {
