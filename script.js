@@ -206,34 +206,53 @@ class AssetTracker {
     }
 
     copyYesterdayRecords() {
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
+        // Get the current date from the form input, or use today's date in local timezone
+        const currentDateInput = document.getElementById('date').value;
+        let targetDate;
         
-        const todayString = today.toISOString().split('T')[0];
-        const yesterdayString = yesterday.toISOString().split('T')[0];
+        if (currentDateInput) {
+            // Use the date from the form input
+            targetDate = currentDateInput;
+        } else {
+            // Use today's date in local timezone (避免UTC時區問題)
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            targetDate = `${year}-${month}-${day}`;
+        }
+        
+        // Calculate yesterday's date based on the target date
+        const targetDateObj = new Date(targetDate + 'T00:00:00'); // 避免時區問題
+        const yesterdayObj = new Date(targetDateObj);
+        yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+        
+        const year = yesterdayObj.getFullYear();
+        const month = String(yesterdayObj.getMonth() + 1).padStart(2, '0');
+        const day = String(yesterdayObj.getDate()).padStart(2, '0');
+        const yesterdayString = `${year}-${month}-${day}`;
         
         // Find all records from yesterday
         const yesterdayRecords = this.assets.filter(asset => asset.date === yesterdayString);
         
         if (yesterdayRecords.length === 0) {
-            alert('昨天沒有找到任何資產記錄');
+            alert(`${yesterdayString} 沒有找到任何資產記錄`);
             return;
         }
         
-        // Check if today already has records
-        const todayRecords = this.assets.filter(asset => asset.date === todayString);
-        if (todayRecords.length > 0) {
-            if (!confirm(`今天已有 ${todayRecords.length} 筆記錄，是否要繼續複製昨天的記錄？`)) {
+        // Check if target date already has records
+        const targetDateRecords = this.assets.filter(asset => asset.date === targetDate);
+        if (targetDateRecords.length > 0) {
+            if (!confirm(`${targetDate} 已有 ${targetDateRecords.length} 筆記錄，是否要繼續複製 ${yesterdayString} 的記錄？`)) {
                 return;
             }
         }
         
-        // Copy yesterday's records with today's date and new IDs
+        // Copy yesterday's records with target date and new IDs
         const copiedRecords = yesterdayRecords.map(asset => ({
             ...asset,
             id: Date.now() + Math.random(), // Generate unique ID
-            date: todayString
+            date: targetDate
         }));
         
         // Add copied records to assets array
@@ -248,7 +267,10 @@ class AssetTracker {
             this.renderCalendar();
         }
         
-        alert(`成功複製了 ${copiedRecords.length} 筆昨天的記錄到今天`);
+        // Update the form date to the target date
+        document.getElementById('date').value = targetDate;
+        
+        alert(`成功複製了 ${copiedRecords.length} 筆 ${yesterdayString} 的記錄到 ${targetDate}`);
     }
 
     loadAssets() {
