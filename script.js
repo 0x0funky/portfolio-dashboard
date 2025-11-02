@@ -318,7 +318,11 @@ class AssetTracker {
 
     calculateDailyChange(asset) {
         // Find previous day's data for the same source
-        const currentDate = new Date(asset.date);
+        const currentDate = this.parseDateString(asset.date);
+        if (!currentDate) {
+            return '<span class="daily-change neutral">--</span>';
+        }
+
         const previousDate = new Date(currentDate);
         previousDate.setDate(currentDate.getDate() - 1);
         const previousDateStr = this.formatLocalDate(previousDate);
@@ -406,7 +410,10 @@ class AssetTracker {
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
 
-        return this.assets.filter(asset => new Date(asset.date) >= cutoffDate);
+        return this.assets.filter(asset => {
+            const assetDate = this.parseDateString(asset.date);
+            return assetDate && assetDate >= cutoffDate;
+        });
     }
 
     prepareChartData(assets) {
@@ -890,6 +897,40 @@ class AssetTracker {
         return `${year}-${month}-${day}`;
     }
 
+    parseDateString(dateStr) {
+        if (!dateStr) return null;
+
+        const normalized = this.formatDateString(dateStr);
+        const parts = normalized.split('-');
+        if (parts.length !== 3) {
+            const fallback = new Date(normalized);
+            return Number.isNaN(fallback.getTime()) ? null : fallback;
+        }
+
+        const [yearStr, monthStr, dayStr] = parts;
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        const day = parseInt(dayStr, 10);
+
+        if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+            const fallback = new Date(normalized);
+            return Number.isNaN(fallback.getTime()) ? null : fallback;
+        }
+
+        return new Date(year, month - 1, day);
+    }
+
+    areSameDay(dateA, dateB) {
+        if (!(dateA instanceof Date) || Number.isNaN(dateA.getTime())) return false;
+        if (!(dateB instanceof Date) || Number.isNaN(dateB.getTime())) return false;
+
+        return (
+            dateA.getFullYear() === dateB.getFullYear() &&
+            dateA.getMonth() === dateB.getMonth() &&
+            dateA.getDate() === dateB.getDate()
+        );
+    }
+
     handleImport(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -1183,12 +1224,18 @@ class AssetTracker {
         this.filteredAssets = this.assets.filter(asset => {
             // Date filter
             if (this.activeFilters.date.from || this.activeFilters.date.to) {
-                const assetDate = new Date(asset.date);
-                if (this.activeFilters.date.from && assetDate < new Date(this.activeFilters.date.from)) {
-                    return false;
+                const assetDate = this.parseDateString(asset.date);
+                if (this.activeFilters.date.from) {
+                    const fromDate = this.parseDateString(this.activeFilters.date.from);
+                    if (fromDate && (!assetDate || assetDate < fromDate)) {
+                        return false;
+                    }
                 }
-                if (this.activeFilters.date.to && assetDate > new Date(this.activeFilters.date.to)) {
-                    return false;
+                if (this.activeFilters.date.to) {
+                    const toDate = this.parseDateString(this.activeFilters.date.to);
+                    if (toDate && (!assetDate || assetDate > toDate)) {
+                        return false;
+                    }
                 }
             }
             
@@ -1224,7 +1271,16 @@ class AssetTracker {
             this.applySorting();
         } else {
             // Default sort by date (newest first)
-            this.filteredAssets.sort((a, b) => new Date(b.date) - new Date(a.date));
+            this.filteredAssets.sort((a, b) => {
+                const dateA = this.parseDateString(a.date);
+                const dateB = this.parseDateString(b.date);
+
+                if (!dateA && !dateB) return 0;
+                if (!dateA) return 1;
+                if (!dateB) return -1;
+
+                return dateB - dateA;
+            });
         }
 
         this.updateTable();
@@ -1276,7 +1332,16 @@ class AssetTracker {
         if (this.sortConfig.column) {
             this.applySorting();
         } else {
-            this.filteredAssets.sort((a, b) => new Date(b.date) - new Date(a.date));
+            this.filteredAssets.sort((a, b) => {
+                const dateA = this.parseDateString(a.date);
+                const dateB = this.parseDateString(b.date);
+
+                if (!dateA && !dateB) return 0;
+                if (!dateA) return 1;
+                if (!dateB) return -1;
+
+                return dateB - dateA;
+            });
         }
         
         this.updateTable();
@@ -1715,7 +1780,7 @@ class AssetTracker {
     }
 
     showDailyDetails(dateString, assets) {
-        const date = new Date(dateString);
+        const date = this.parseDateString(dateString) || new Date(dateString);
         const formattedDate = date.toLocaleDateString('zh-TW', { 
             year: 'numeric', 
             month: 'long', 
@@ -1838,7 +1903,16 @@ class AssetTracker {
             this.applySorting();
         } else {
             // Reset to default sort (newest first)
-            this.filteredAssets.sort((a, b) => new Date(b.date) - new Date(a.date));
+            this.filteredAssets.sort((a, b) => {
+                const dateA = this.parseDateString(a.date);
+                const dateB = this.parseDateString(b.date);
+
+                if (!dateA && !dateB) return 0;
+                if (!dateA) return 1;
+                if (!dateB) return -1;
+
+                return dateB - dateA;
+            });
         }
 
         this.updateTable();
@@ -1854,8 +1928,8 @@ class AssetTracker {
             
             switch (column) {
                 case 'date':
-                    aValue = new Date(a.date);
-                    bValue = new Date(b.date);
+                    aValue = this.parseDateString(a.date)?.getTime() ?? Number.NaN;
+                    bValue = this.parseDateString(b.date)?.getTime() ?? Number.NaN;
                     break;
                 case 'name':
                     aValue = a.name.toLowerCase();
@@ -1961,61 +2035,65 @@ class AssetTracker {
     }
 
     updateMonthlyRevenue(year, month) {
+        const monthStart = new Date(year, month, 1);
+
+        // 先建立已解析日期的資產資料，方便後續比較
+        const parsedAssets = this.assets
+            .map(asset => {
+                const parsedDate = this.parseDateString(asset.date);
+                return parsedDate ? { ...asset, parsedDate } : null;
+            })
+            .filter(Boolean);
+
         // 獲取當月的所有資產資料
-        const monthAssets = this.assets.filter(asset => {
-            const assetDate = new Date(asset.date);
-            return assetDate.getFullYear() === year && assetDate.getMonth() === month;
-        });
+        const monthAssets = parsedAssets.filter(({ parsedDate }) =>
+            parsedDate.getFullYear() === year && parsedDate.getMonth() === month
+        );
 
         if (monthAssets.length === 0) {
             document.getElementById('monthlyRevenue').innerHTML = '<span class="neutral">無資料</span>';
             return;
         }
 
-        // 計算月初和月末的總資產
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        
-        // 找到月初第一天的資產
+        // 找到當月最晚的有資料日期
+        const latestAssetDate = monthAssets.reduce((latest, current) =>
+            current.parsedDate > latest ? current.parsedDate : latest,
+            monthAssets[0].parsedDate
+        );
+
+        // 月初總資產：優先使用上個月最後一天的資料作為基準
         let monthStartTotal = 0;
-        const firstDayAssets = monthAssets.filter(asset => {
-            const assetDate = new Date(asset.date);
-            return assetDate.getDate() === 1;
-        });
-        
-        if (firstDayAssets.length > 0) {
-            monthStartTotal = firstDayAssets.reduce((sum, asset) => sum + asset.amount, 0);
+        const previousAssets = parsedAssets.filter(item => item.parsedDate < monthStart);
+
+        if (previousAssets.length > 0) {
+            // 找到上個月最後一天的資料
+            const latestPrevDate = previousAssets.reduce((latest, current) =>
+                current.parsedDate > latest ? current.parsedDate : latest,
+                previousAssets[0].parsedDate
+            );
+            monthStartTotal = previousAssets
+                .filter(item => this.areSameDay(item.parsedDate, latestPrevDate))
+                .reduce((sum, item) => sum + item.amount, 0);
         } else {
-            // 如果月初無資料，找最接近的上個月最後一天
-            const prevMonth = new Date(year, month - 1, 0);
-            const prevMonthStr = this.formatLocalDate(prevMonth);
-            const prevMonthAssets = this.assets.filter(asset => asset.date === prevMonthStr);
-            monthStartTotal = prevMonthAssets.reduce((sum, asset) => sum + asset.amount, 0);
+            // 如果沒有上個月的資料，則使用當月第一天的資料作為基準（營收為0）
+            const earliestAssetDate = monthAssets.reduce((earliest, current) =>
+                current.parsedDate < earliest ? current.parsedDate : earliest,
+                monthAssets[0].parsedDate
+            );
+            monthStartTotal = monthAssets
+                .filter(item => this.areSameDay(item.parsedDate, earliestAssetDate))
+                .reduce((sum, item) => sum + item.amount, 0);
         }
 
-        // 找到月末最後一天的資產
-        const lastDayAssets = monthAssets.filter(asset => {
-            const assetDate = new Date(asset.date);
-            return assetDate.getDate() === lastDay.getDate();
-        });
-        
-        let monthEndTotal = 0;
-        if (lastDayAssets.length > 0) {
-            monthEndTotal = lastDayAssets.reduce((sum, asset) => sum + asset.amount, 0);
-        } else {
-            // 如果月末無資料，找該月最後有資料的一天
-            const sortedDates = [...new Set(monthAssets.map(asset => asset.date))].sort();
-            if (sortedDates.length > 0) {
-                const lastAvailableDate = sortedDates[sortedDates.length - 1];
-                const lastAvailableAssets = monthAssets.filter(asset => asset.date === lastAvailableDate);
-                monthEndTotal = lastAvailableAssets.reduce((sum, asset) => sum + asset.amount, 0);
-            }
-        }
+        // 月末總資產：使用當月最後有資料的一天
+        const monthEndTotal = monthAssets
+            .filter(item => this.areSameDay(item.parsedDate, latestAssetDate))
+            .reduce((sum, item) => sum + item.amount, 0);
 
         // 計算營收變化
         const revenue = monthEndTotal - monthStartTotal;
         const revenueElement = document.getElementById('monthlyRevenue');
-        
+
         if (revenue > 0) {
             revenueElement.innerHTML = `<span class="positive">+${revenue.toLocaleString('zh-TW', { maximumFractionDigits: 0 })} USDT</span>`;
         } else if (revenue < 0) {
