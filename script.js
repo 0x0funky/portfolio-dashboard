@@ -2,6 +2,9 @@ class AssetTracker {
     constructor() {
         this.assets = this.loadAssets();
         this.chart = null;
+        this.sourceTrendChart = null;
+        this.monthlyTrendChart = null;
+        this.yearlyTrendChart = null;
         this.filteredAssets = [...this.assets];
         this.sortConfig = { column: null, direction: null };
         this.activeFilters = {
@@ -24,6 +27,7 @@ class AssetTracker {
         this.setupEventListeners();
         this.applyFilters(); // This will set default sorting (newest first)
         this.updateChart();
+        this.updateAllTrendCharts();
         this.updateTotalDisplay();
         this.setDefaultDate();
         this.initializeDarkMode();
@@ -37,16 +41,22 @@ class AssetTracker {
         document.getElementById('importFile').addEventListener('change', (e) => this.handleImport(e));
         document.getElementById('clearBtn').addEventListener('click', () => this.clearAllData());
         document.getElementById('chartType').addEventListener('change', () => this.updateChart());
-        document.getElementById('timeRange').addEventListener('change', () => this.updateChart());
+        document.getElementById('timeRange').addEventListener('change', () => this.handleTimeRangeChange());
+        document.getElementById('monthPicker').addEventListener('change', () => this.updateChart());
         document.getElementById('toggleYAxis').addEventListener('click', () => this.toggleYAxis());
         document.getElementById('clearFilters').addEventListener('click', () => this.clearAllFilters());
-        
+
+        // Trend charts event listeners
+        document.getElementById('sourceTrendTimeRange').addEventListener('change', () => this.updateSourceTrendChart());
+        document.getElementById('monthlyTrendTimeRange').addEventListener('change', () => this.updateMonthlyTrendChart());
+        document.getElementById('sourceTrendSourceSelect').addEventListener('change', () => this.updateSourceTrendChart());
+
         // Source dropdown event listeners
         document.getElementById('sourceDropdownBtn').addEventListener('click', (e) => {
             e.preventDefault();
             this.toggleSourceDropdown();
         });
-        
+
         // Close source dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.source-input-container')) {
@@ -58,7 +68,7 @@ class AssetTracker {
         // Edit modal event listeners
         document.getElementById('editAssetForm').addEventListener('submit', (e) => this.handleEditSubmit(e));
         document.getElementById('cancelEditBtn').addEventListener('click', () => this.closeEditModal());
-        
+
         // Edit source dropdown listeners
         document.getElementById('editSourceDropdownBtn').addEventListener('click', (e) => {
             e.preventDefault();
@@ -71,7 +81,7 @@ class AssetTracker {
             editModalMouseDownTarget = e.target;
         });
         document.getElementById('editModal').addEventListener('mouseup', (e) => {
-            if (e.target === document.getElementById('editModal') && 
+            if (e.target === document.getElementById('editModal') &&
                 editModalMouseDownTarget === document.getElementById('editModal')) {
                 this.closeEditModal();
             }
@@ -101,14 +111,14 @@ class AssetTracker {
 
         // Daily details modal listeners
         document.getElementById('closeDailyDetailsBtn').addEventListener('click', () => this.closeDailyDetailsModal());
-        
+
         // Close daily details modal when clicking outside (using mousedown/mouseup to prevent accidental closing during text selection)
         let dailyModalMouseDownTarget = null;
         document.getElementById('dailyDetailsModal').addEventListener('mousedown', (e) => {
             dailyModalMouseDownTarget = e.target;
         });
         document.getElementById('dailyDetailsModal').addEventListener('mouseup', (e) => {
-            if (e.target === document.getElementById('dailyDetailsModal') && 
+            if (e.target === document.getElementById('dailyDetailsModal') &&
                 dailyModalMouseDownTarget === document.getElementById('dailyDetailsModal')) {
                 this.closeDailyDetailsModal();
             }
@@ -119,7 +129,7 @@ class AssetTracker {
         document.querySelector('.daily-modal-content').addEventListener('mousedown', (e) => {
             e.stopPropagation();
         });
-        
+
         // Filter dropdown event listeners
         document.querySelectorAll('.filter-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
@@ -127,19 +137,19 @@ class AssetTracker {
                 this.toggleFilterDropdown(icon.dataset.filter);
             });
         });
-        
+
         // Sorting event listeners (only on header text and sort icon, not on filter icons)
         document.querySelectorAll('.sortable').forEach(header => {
             const headerText = header.querySelector('.header-content span');
             const sortIcon = header.querySelector('.sort-icon');
-            
+
             if (headerText) {
                 headerText.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.handleSort(header.dataset.column);
                 });
             }
-            
+
             if (sortIcon) {
                 sortIcon.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -157,7 +167,7 @@ class AssetTracker {
 
         // Setup filter controls after initial load
         setTimeout(() => this.setupFilterControls(), 100);
-        
+
         // Initialize source dropdown and calendar
         setTimeout(() => {
             this.updateSourceDropdown();
@@ -172,7 +182,7 @@ class AssetTracker {
 
     handleSubmit(e) {
         e.preventDefault();
-        
+
         const asset = {
             id: Date.now(),
             date: document.getElementById('date').value,
@@ -186,6 +196,7 @@ class AssetTracker {
         this.saveAssets();
         this.applyFilters(); // This will update filteredAssets and table
         this.updateChart();
+        this.updateAllTrendCharts();
         this.updateTotalDisplay();
         this.updateSourceDropdown(); // Update source dropdown with new source
         if (this.currentView === 'calendar') {
@@ -198,9 +209,9 @@ class AssetTracker {
     resetForm() {
         // Store the current date value before reset
         const currentDate = document.getElementById('date').value;
-        
+
         document.getElementById('assetForm').reset();
-        
+
         // Restore the date value
         document.getElementById('date').value = currentDate;
     }
@@ -209,7 +220,7 @@ class AssetTracker {
         // Get the current date from the form input, or use today's date in local timezone
         const currentDateInput = document.getElementById('date').value;
         let targetDate;
-        
+
         if (currentDateInput) {
             // Use the date from the form input
             targetDate = currentDateInput;
@@ -221,25 +232,25 @@ class AssetTracker {
             const day = String(now.getDate()).padStart(2, '0');
             targetDate = `${year}-${month}-${day}`;
         }
-        
+
         // Calculate yesterday's date based on the target date
         const targetDateObj = new Date(targetDate + 'T00:00:00'); // 避免時區問題
         const yesterdayObj = new Date(targetDateObj);
         yesterdayObj.setDate(yesterdayObj.getDate() - 1);
-        
+
         const year = yesterdayObj.getFullYear();
         const month = String(yesterdayObj.getMonth() + 1).padStart(2, '0');
         const day = String(yesterdayObj.getDate()).padStart(2, '0');
         const yesterdayString = `${year}-${month}-${day}`;
-        
+
         // Find all records from yesterday
         const yesterdayRecords = this.assets.filter(asset => asset.date === yesterdayString);
-        
+
         if (yesterdayRecords.length === 0) {
             alert(`${yesterdayString} 沒有找到任何資產記錄`);
             return;
         }
-        
+
         // Check if target date already has records
         const targetDateRecords = this.assets.filter(asset => asset.date === targetDate);
         if (targetDateRecords.length > 0) {
@@ -247,29 +258,30 @@ class AssetTracker {
                 return;
             }
         }
-        
+
         // Copy yesterday's records with target date and new IDs
         const copiedRecords = yesterdayRecords.map(asset => ({
             ...asset,
             id: Date.now() + Math.random(), // Generate unique ID
             date: targetDate
         }));
-        
+
         // Add copied records to assets array
         this.assets.push(...copiedRecords);
         this.saveAssets();
         this.applyFilters();
         this.updateChart();
+        this.updateAllTrendCharts();
         this.updateTotalDisplay();
         this.updateSourceDropdown();
-        
+
         if (this.currentView === 'calendar') {
             this.renderCalendar();
         }
-        
+
         // Update the form date to the target date
         document.getElementById('date').value = targetDate;
-        
+
         alert(`成功複製了 ${copiedRecords.length} 筆 ${yesterdayString} 的記錄到 ${targetDate}`);
     }
 
@@ -291,7 +303,7 @@ class AssetTracker {
             const notes = asset.notes || '';
             const truncatedNotes = notes.length > 30 ? notes.substring(0, 30) + '...' : notes;
             const hasLongNotes = notes.length > 30;
-            
+
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${asset.date}</td>
@@ -328,9 +340,9 @@ class AssetTracker {
         const previousDateStr = this.formatLocalDate(previousDate);
 
         // Find all previous day assets for the same source
-        const previousAssets = this.assets.filter(a => 
-            a.date === previousDateStr && 
-            a.name === asset.name && 
+        const previousAssets = this.assets.filter(a =>
+            a.date === previousDateStr &&
+            a.name === asset.name &&
             a.currency === asset.currency
         );
 
@@ -340,11 +352,11 @@ class AssetTracker {
 
         // Sum up all amounts for the same source on previous day
         const previousTotal = previousAssets.reduce((sum, a) => sum + a.amount, 0);
-        
+
         // Sum up all amounts for the same source on current day
-        const currentAssets = this.assets.filter(a => 
-            a.date === asset.date && 
-            a.name === asset.name && 
+        const currentAssets = this.assets.filter(a =>
+            a.date === asset.date &&
+            a.name === asset.name &&
             a.currency === asset.currency
         );
         const currentTotal = currentAssets.reduce((sum, a) => sum + a.amount, 0);
@@ -367,6 +379,7 @@ class AssetTracker {
             this.saveAssets();
             this.applyFilters(); // This will update filteredAssets and the table
             this.updateChart();
+            this.updateAllTrendCharts();
             this.updateTotalDisplay();
             if (this.currentView === 'calendar') {
                 this.renderCalendar(); // Update calendar view
@@ -375,10 +388,30 @@ class AssetTracker {
         }
     }
 
+    handleTimeRangeChange() {
+        const timeRange = document.getElementById('timeRange').value;
+        const monthPicker = document.getElementById('monthPicker');
+
+        if (timeRange === 'month') {
+            monthPicker.style.display = 'inline-block';
+            // Set default to current month if not set
+            if (!monthPicker.value) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                monthPicker.value = `${year}-${month}`;
+            }
+        } else {
+            monthPicker.style.display = 'none';
+        }
+
+        this.updateChart();
+    }
+
     updateChart() {
         const chartType = document.getElementById('chartType').value;
         const timeRange = document.getElementById('timeRange').value;
-        
+
         const filteredAssets = this.getFilteredAssets(timeRange);
         let chartData;
         let chartOptions;
@@ -387,7 +420,7 @@ class AssetTracker {
             chartData = this.preparePieChartData(filteredAssets);
             chartOptions = this.getPieChartOptions();
         } else {
-            chartData = this.prepareChartData(filteredAssets);
+            chartData = this.prepareChartData(filteredAssets, timeRange);
             chartOptions = this.getLineBarChartOptions();
         }
 
@@ -406,6 +439,19 @@ class AssetTracker {
     getFilteredAssets(timeRange) {
         if (timeRange === 'all') return this.assets;
 
+        if (timeRange === 'month') {
+            const monthPicker = document.getElementById('monthPicker');
+            if (!monthPicker.value) return this.assets;
+
+            const [year, month] = monthPicker.value.split('-').map(Number);
+
+            return this.assets.filter(asset => {
+                const assetDate = this.parseDateString(asset.date);
+                if (!assetDate) return false;
+                return assetDate.getFullYear() === year && assetDate.getMonth() === month - 1;
+            });
+        }
+
         const days = parseInt(timeRange);
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);
@@ -416,7 +462,7 @@ class AssetTracker {
         });
     }
 
-    prepareChartData(assets) {
+    prepareChartData(assets, timeRange) {
         // Group assets by date and calculate daily totals
         const dailyTotals = {};
 
@@ -427,8 +473,67 @@ class AssetTracker {
             dailyTotals[asset.date] += asset.amount;
         });
 
-        const dates = Object.keys(dailyTotals).sort();
-        const totals = dates.map(date => dailyTotals[date]);
+        let dates, totals;
+
+        // If viewing by month, generate all days in the month
+        if (timeRange === 'month') {
+            const monthPicker = document.getElementById('monthPicker');
+            if (monthPicker && monthPicker.value) {
+                const [year, month] = monthPicker.value.split('-').map(Number);
+                const startDate = new Date(year, month - 1, 1);
+                const endDate = new Date(year, month, 0); // Last day of the month
+                const daysInMonth = endDate.getDate();
+
+                dates = [];
+                totals = [];
+
+                let previousTotal = null;
+
+                // Find the last total from previous month to use as starting point
+                const prevMonthAssets = this.assets.filter(asset => {
+                    const assetDate = this.parseDateString(asset.date);
+                    if (!assetDate) return false;
+                    return assetDate < startDate;
+                });
+
+                if (prevMonthAssets.length > 0) {
+                    // Get the latest date from previous months
+                    const latestPrevDate = prevMonthAssets.reduce((latest, asset) => {
+                        const assetDate = this.parseDateString(asset.date);
+                        return assetDate > latest ? assetDate : latest;
+                    }, this.parseDateString(prevMonthAssets[0].date));
+
+                    const latestPrevDateStr = this.formatLocalDate(latestPrevDate);
+                    previousTotal = prevMonthAssets
+                        .filter(asset => asset.date === latestPrevDateStr)
+                        .reduce((sum, asset) => sum + asset.amount, 0);
+                }
+
+                // Generate data for each day of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateObj = new Date(year, month - 1, day);
+                    const dateStr = this.formatLocalDate(dateObj);
+                    dates.push(dateStr);
+
+                    if (dailyTotals[dateStr] !== undefined) {
+                        // This day has data
+                        totals.push(dailyTotals[dateStr]);
+                        previousTotal = dailyTotals[dateStr];
+                    } else {
+                        // This day has no data, use previous day's total
+                        totals.push(previousTotal !== null ? previousTotal : 0);
+                    }
+                }
+            } else {
+                // Fallback if no month selected
+                dates = Object.keys(dailyTotals).sort();
+                totals = dates.map(date => dailyTotals[date]);
+            }
+        } else {
+            // Original behavior for other time ranges
+            dates = Object.keys(dailyTotals).sort();
+            totals = dates.map(date => dailyTotals[date]);
+        }
 
         // Calculate daily changes
         const changes = [];
@@ -454,15 +559,15 @@ class AssetTracker {
             }, {
                 label: '每日變化',
                 data: changes,
-                backgroundColor: changes.map(change => 
-                    change > 0 ? 'rgba(40, 167, 69, 0.8)' : 
-                    change < 0 ? 'rgba(220, 53, 69, 0.8)' : 
-                    'rgba(108, 117, 125, 0.8)'
+                backgroundColor: changes.map(change =>
+                    change > 0 ? 'rgba(40, 167, 69, 0.8)' :
+                        change < 0 ? 'rgba(220, 53, 69, 0.8)' :
+                            'rgba(108, 117, 125, 0.8)'
                 ),
-                borderColor: changes.map(change => 
-                    change > 0 ? 'rgba(40, 167, 69, 1)' : 
-                    change < 0 ? 'rgba(220, 53, 69, 1)' : 
-                    'rgba(108, 117, 125, 1)'
+                borderColor: changes.map(change =>
+                    change > 0 ? 'rgba(40, 167, 69, 1)' :
+                        change < 0 ? 'rgba(220, 53, 69, 1)' :
+                            'rgba(108, 117, 125, 1)'
                 ),
                 borderWidth: 2,
                 type: 'bar',
@@ -491,7 +596,7 @@ class AssetTracker {
 
         // Get only assets from the latest date
         const latestAssets = assets.filter(asset => asset.date === latestDate);
-        
+
         // Group assets by source and calculate totals for latest date
         const assetTotals = {};
 
@@ -504,7 +609,7 @@ class AssetTracker {
 
         const labels = Object.keys(assetTotals);
         const data = Object.values(assetTotals);
-        
+
         const colors = [
             'rgba(102, 126, 234, 0.8)',
             'rgba(118, 75, 162, 0.8)',
@@ -531,7 +636,7 @@ class AssetTracker {
         const isDarkMode = document.body.classList.contains('dark-mode');
         const textColor = isDarkMode ? '#f0f0f0' : '#666';
         const gridColor = isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)';
-        
+
         return {
             responsive: true,
             maintainAspectRatio: false,
@@ -566,7 +671,7 @@ class AssetTracker {
                     borderColor: isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)',
                     borderWidth: 1,
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             if (context.datasetIndex === 0) {
                                 return `總資產: ${context.parsed.y.toLocaleString('zh-TW')} USDT`;
                             } else {
@@ -619,7 +724,7 @@ class AssetTracker {
                         font: {
                             size: 11
                         },
-                        callback: function(value) {
+                        callback: function (value) {
                             return value.toLocaleString('zh-TW');
                         }
                     },
@@ -650,7 +755,7 @@ class AssetTracker {
                         font: {
                             size: 11
                         },
-                        callback: function(value) {
+                        callback: function (value) {
                             const sign = value >= 0 ? '+' : '';
                             return `${sign}${value.toLocaleString('zh-TW')}`;
                         }
@@ -663,7 +768,7 @@ class AssetTracker {
     getPieChartOptions() {
         const isDarkMode = document.body.classList.contains('dark-mode');
         const textColor = isDarkMode ? '#f0f0f0' : '#666';
-        
+
         return {
             responsive: true,
             maintainAspectRatio: false,
@@ -694,7 +799,7 @@ class AssetTracker {
                     borderColor: isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)',
                     borderWidth: 1,
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const label = context.label || '';
                             const value = context.raw || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -717,13 +822,13 @@ class AssetTracker {
         const latestDate = this.assets.reduce((latest, asset) => {
             return asset.date > latest ? asset.date : latest;
         }, '');
-        
+
         const latestAssets = this.assets.filter(asset => asset.date === latestDate);
         const total = latestAssets.reduce((sum, asset) => sum + asset.amount, 0);
 
-        document.getElementById('totalAssets').textContent = total.toLocaleString('zh-TW', { 
+        document.getElementById('totalAssets').textContent = total.toLocaleString('zh-TW', {
             minimumFractionDigits: 2,
-            maximumFractionDigits: 2 
+            maximumFractionDigits: 2
         });
     }
 
@@ -737,15 +842,15 @@ class AssetTracker {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        
+
         link.setAttribute('href', url);
         link.setAttribute('download', `asset_data_${this.formatLocalDate(new Date())}.csv`);
         link.style.visibility = 'hidden';
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         this.showMessage('數據已成功匯出！', 'success');
     }
 
@@ -768,51 +873,51 @@ class AssetTracker {
 
     parseCSV(content) {
         console.log('CSV content preview:', content.substring(0, 500));
-        
+
         // Remove BOM if present
         const cleanContent = content.replace(/^\uFEFF/, '');
         const lines = cleanContent.split('\n').filter(line => line.trim());
-        
+
         console.log('Lines count:', lines.length);
         console.log('First few lines:', lines.slice(0, 5));
-        
+
         if (lines.length < 2) {
             throw new Error(`CSV 檔案內容不足，只有 ${lines.length} 行`);
         }
-        
+
         // Detect delimiter (tab or comma)
         const firstDataLine = lines[1];
         const delimiter = firstDataLine.includes('\t') ? '\t' : ',';
         console.log('Detected delimiter:', delimiter === '\t' ? 'TAB' : 'COMMA');
-        
+
         // Skip header line and parse data
         const dataLines = lines.slice(1);
         const assets = [];
         const errors = [];
-        
+
         dataLines.forEach((line, index) => {
             try {
                 const values = this.parseCSVLine(line, delimiter);
                 console.log(`Line ${index + 2} values:`, values);
-                
+
                 if (values.length < 4) {
                     errors.push(`第 ${index + 2} 行欄位不足：只有 ${values.length} 個欄位，需要 4 個`);
                     return;
                 }
-                
+
                 // Convert date format from 2025/8/20 to 2025-08-20
                 const dateValue = values[0].trim();
                 const formattedDate = this.formatDateString(dateValue);
-                
+
                 const asset = {
                     date: formattedDate,
                     name: values[1].replace(/^"(.*)"$/, '$1').trim(), // Remove quotes and trim
                     amount: parseFloat(values[2].trim()),
                     currency: values[3].trim()
                 };
-                
+
                 console.log(`Parsed asset from line ${index + 2}:`, asset);
-                
+
                 // Validate data
                 if (!asset.date) {
                     errors.push(`第 ${index + 2} 行日期無效：'${dateValue}'`);
@@ -830,16 +935,16 @@ class AssetTracker {
                     errors.push(`第 ${index + 2} 行幣種空白`);
                     return;
                 }
-                
+
                 assets.push(asset);
             } catch (lineError) {
                 errors.push(`第 ${index + 2} 行解析錯誤：${lineError.message}`);
             }
         });
-        
+
         console.log('Successfully parsed assets:', assets.length);
         console.log('Parsing errors:', errors);
-        
+
         if (assets.length === 0) {
             if (errors.length > 0) {
                 throw new Error(`沒有有效的資產數據。錯誤：${errors.slice(0, 3).join('; ')}`);
@@ -847,7 +952,7 @@ class AssetTracker {
                 throw new Error('沒有有效的資產數據');
             }
         }
-        
+
         return assets;
     }
 
@@ -855,10 +960,10 @@ class AssetTracker {
         const result = [];
         let current = '';
         let inQuotes = false;
-        
+
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
-            
+
             if (char === '"') {
                 inQuotes = !inQuotes;
             } else if (char === delimiter && !inQuotes) {
@@ -868,7 +973,7 @@ class AssetTracker {
                 current += char;
             }
         }
-        
+
         result.push(current);
         return result;
     }
@@ -884,7 +989,7 @@ class AssetTracker {
                 return `${year}-${month}-${day}`;
             }
         }
-        
+
         // If already in correct format or other format, return as is
         return dateStr;
     }
@@ -942,9 +1047,9 @@ class AssetTracker {
                 console.log('File name:', file.name);
                 console.log('File size:', file.size);
                 console.log('File type:', file.type);
-                
+
                 let data;
-                
+
                 // Try to parse as JSON first
                 if (file.name.endsWith('.json')) {
                     data = JSON.parse(content);
@@ -959,7 +1064,7 @@ class AssetTracker {
                         data = this.parseCSV(content);
                     }
                 }
-                
+
                 if (Array.isArray(data) && data.length > 0) {
                     if (confirm(`要匯入 ${data.length} 筆資產數據嗎？這將會覆蓋現有數據。`)) {
                         this.assets = data.map(item => ({
@@ -969,6 +1074,7 @@ class AssetTracker {
                         this.saveAssets();
                         this.applyFilters();
                         this.updateChart();
+                        this.updateAllTrendCharts();
                         this.updateTotalDisplay();
                         this.updateSourceDropdown();
                         if (this.currentView === 'calendar') {
@@ -993,6 +1099,7 @@ class AssetTracker {
             this.saveAssets();
             this.clearAllFilters(); // This will reset filteredAssets and update table
             this.updateChart();
+            this.updateAllTrendCharts();
             this.updateTotalDisplay();
             this.showMessage('所有數據已清除', 'success');
         }
@@ -1005,7 +1112,7 @@ class AssetTracker {
         const messageDiv = document.createElement('div');
         messageDiv.className = type;
         messageDiv.textContent = message;
-        
+
         const container = document.querySelector('.container');
         container.insertBefore(messageDiv, container.firstChild.nextSibling);
 
@@ -1019,7 +1126,7 @@ class AssetTracker {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = this.formatLocalDate(yesterday);
-        
+
         const sampleAssets = [
             { id: 1, date: '2025-01-15', name: '幣安', amount: 50000, currency: 'USDT', notes: '' },
             { id: 2, date: '2025-01-15', name: '現金', amount: 30000, currency: 'USDT', notes: '' },
@@ -1037,6 +1144,7 @@ class AssetTracker {
             this.saveAssets();
             this.applyFilters(); // This will update filteredAssets and table
             this.updateChart();
+            this.updateAllTrendCharts();
             this.updateTotalDisplay();
             this.updateSourceDropdown();
             this.showMessage('已載入示例數據', 'success');
@@ -1046,10 +1154,10 @@ class AssetTracker {
     toggleFilterDropdown(filterType) {
         const dropdown = document.getElementById(`${filterType}FilterDropdown`);
         const icon = document.querySelector(`[data-filter="${filterType}"]`);
-        
+
         // Close other dropdowns first
         this.closeAllDropdowns();
-        
+
         if (dropdown.classList.contains('show')) {
             dropdown.classList.remove('show');
             icon.classList.remove('active');
@@ -1072,7 +1180,7 @@ class AssetTracker {
     populateFilterOptions(filterType) {
         const optionsContainer = document.getElementById(`${filterType}Options`);
         const uniqueValues = new Set();
-        
+
         // Get unique values for this column
         this.assets.forEach(asset => {
             let value;
@@ -1095,7 +1203,7 @@ class AssetTracker {
 
         // Clear and populate options
         optionsContainer.innerHTML = '<label><input type="checkbox" value="all" checked> 全選</label>';
-        
+
         const sortedValues = Array.from(uniqueValues).sort();
         sortedValues.forEach(value => {
             const label = document.createElement('label');
@@ -1103,12 +1211,12 @@ class AssetTracker {
             checkbox.type = 'checkbox';
             checkbox.value = value;
             checkbox.checked = this.activeFilters[filterType].selected.size === 0 || this.activeFilters[filterType].selected.has(value);
-            
+
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(' ' + (filterType === 'amount' ? value.toLocaleString('zh-TW') : value)));
-            
+
             optionsContainer.appendChild(label);
-            
+
             // Add event listener for individual checkbox
             checkbox.addEventListener('change', () => {
                 this.handleFilterCheckboxChange(filterType, value, checkbox.checked);
@@ -1125,7 +1233,7 @@ class AssetTracker {
     handleSelectAllChange(filterType, checked) {
         const optionsContainer = document.getElementById(`${filterType}Options`);
         const checkboxes = optionsContainer.querySelectorAll('input[type="checkbox"]:not([value="all"])');
-        
+
         checkboxes.forEach(checkbox => {
             checkbox.checked = checked;
         });
@@ -1151,7 +1259,7 @@ class AssetTracker {
         const selectAllCheckbox = optionsContainer.querySelector('input[value="all"]');
         const allCheckboxes = optionsContainer.querySelectorAll('input[type="checkbox"]:not([value="all"])');
         const checkedCount = Array.from(allCheckboxes).filter(cb => cb.checked).length;
-        
+
         selectAllCheckbox.checked = checkedCount === allCheckboxes.length;
 
         this.applyFilters();
@@ -1161,13 +1269,13 @@ class AssetTracker {
         // Date range filters
         const dateFromFilter = document.getElementById('dateFromFilter');
         const dateToFilter = document.getElementById('dateToFilter');
-        
+
         if (dateFromFilter && dateToFilter) {
             dateFromFilter.addEventListener('change', () => {
                 this.activeFilters.date.from = dateFromFilter.value;
                 this.applyFilters();
             });
-            
+
             dateToFilter.addEventListener('change', () => {
                 this.activeFilters.date.to = dateToFilter.value;
                 this.applyFilters();
@@ -1177,13 +1285,13 @@ class AssetTracker {
         // Amount range filters
         const amountMinFilter = document.getElementById('amountMinFilter');
         const amountMaxFilter = document.getElementById('amountMaxFilter');
-        
+
         if (amountMinFilter && amountMaxFilter) {
             amountMinFilter.addEventListener('input', () => {
                 this.activeFilters.amount.min = amountMinFilter.value;
                 this.applyFilters();
             });
-            
+
             amountMaxFilter.addEventListener('input', () => {
                 this.activeFilters.amount.max = amountMaxFilter.value;
                 this.applyFilters();
@@ -1193,14 +1301,14 @@ class AssetTracker {
         // Search filters
         const sourceSearchFilter = document.getElementById('sourceSearchFilter');
         const currencySearchFilter = document.getElementById('currencySearchFilter');
-        
+
         if (sourceSearchFilter) {
             sourceSearchFilter.addEventListener('input', () => {
                 this.activeFilters.source.search = sourceSearchFilter.value;
                 this.filterSearchOptions('source');
             });
         }
-        
+
         if (currencySearchFilter) {
             currencySearchFilter.addEventListener('input', () => {
                 this.activeFilters.currency.search = currencySearchFilter.value;
@@ -1213,7 +1321,7 @@ class AssetTracker {
         const searchValue = this.activeFilters[filterType].search.toLowerCase();
         const optionsContainer = document.getElementById(`${filterType}Options`);
         const labels = optionsContainer.querySelectorAll('label:not(:first-child)');
-        
+
         labels.forEach(label => {
             const text = label.textContent.toLowerCase();
             label.style.display = text.includes(searchValue) ? 'flex' : 'none';
@@ -1238,7 +1346,7 @@ class AssetTracker {
                     }
                 }
             }
-            
+
             // Checkbox filters
             if (this.activeFilters.date.selected.size > 0 && !this.activeFilters.date.selected.has(asset.date)) {
                 return false;
@@ -1249,7 +1357,7 @@ class AssetTracker {
             if (this.activeFilters.currency.selected.size > 0 && !this.activeFilters.currency.selected.has(asset.currency)) {
                 return false;
             }
-            
+
             // Amount range filter
             if (this.activeFilters.amount.min && asset.amount < parseFloat(this.activeFilters.amount.min)) {
                 return false;
@@ -1257,7 +1365,7 @@ class AssetTracker {
             if (this.activeFilters.amount.max && asset.amount > parseFloat(this.activeFilters.amount.max)) {
                 return false;
             }
-            
+
             // Amount checkbox filter
             if (this.activeFilters.amount.selected.size > 0 && !this.activeFilters.amount.selected.has(asset.amount)) {
                 return false;
@@ -1292,13 +1400,13 @@ class AssetTracker {
         Object.keys(this.activeFilters).forEach(filterType => {
             const icon = document.querySelector(`[data-filter="${filterType}"]`);
             const filter = this.activeFilters[filterType];
-            
+
             let hasActiveFilter = false;
             if (filter.selected && filter.selected.size > 0) hasActiveFilter = true;
             if (filter.from || filter.to) hasActiveFilter = true;
             if (filter.min || filter.max) hasActiveFilter = true;
             if (filter.search) hasActiveFilter = true;
-            
+
             if (hasActiveFilter) {
                 icon.style.backgroundColor = '#667eea';
                 icon.style.color = 'white';
@@ -1327,7 +1435,7 @@ class AssetTracker {
         document.getElementById('currencySearchFilter').value = '';
 
         this.filteredAssets = [...this.assets];
-        
+
         // Apply current sorting if any
         if (this.sortConfig.column) {
             this.applySorting();
@@ -1343,7 +1451,7 @@ class AssetTracker {
                 return dateB - dateA;
             });
         }
-        
+
         this.updateTable();
         this.updateFilterIcons();
         this.closeAllDropdowns();
@@ -1352,7 +1460,7 @@ class AssetTracker {
     toggleSourceDropdown() {
         const dropdown = document.getElementById('sourceDropdown');
         const button = document.getElementById('sourceDropdownBtn');
-        
+
         if (dropdown.classList.contains('show')) {
             this.closeSourceDropdown();
         } else {
@@ -1365,7 +1473,7 @@ class AssetTracker {
     closeSourceDropdown() {
         const dropdown = document.getElementById('sourceDropdown');
         const button = document.getElementById('sourceDropdownBtn');
-        
+
         dropdown.classList.remove('show');
         button.classList.remove('active');
     }
@@ -1373,14 +1481,14 @@ class AssetTracker {
     populateSourceDropdown() {
         const container = document.querySelector('.source-options');
         const uniqueSources = new Set();
-        
+
         // Get all unique sources from assets
         this.assets.forEach(asset => {
             uniqueSources.add(asset.name);
         });
 
         container.innerHTML = '';
-        
+
         if (uniqueSources.size === 0) {
             container.innerHTML = '<div class="no-sources">尚無歷史來源</div>';
             return;
@@ -1388,7 +1496,7 @@ class AssetTracker {
 
         // Sort sources alphabetically
         const sortedSources = Array.from(uniqueSources).sort();
-        
+
         sortedSources.forEach(source => {
             const option = document.createElement('div');
             option.className = 'source-option';
@@ -1421,14 +1529,14 @@ class AssetTracker {
         }
 
         this.editingAssetId = id;
-        
+
         // Populate the edit form
         document.getElementById('editDate').value = asset.date;
         document.getElementById('editAssetName').value = asset.name;
         document.getElementById('editAmount').value = asset.amount;
         document.getElementById('editCurrency').value = asset.currency;
         document.getElementById('editNotes').value = asset.notes || '';
-        
+
         // Show the modal
         document.getElementById('editModal').classList.add('show');
         document.body.style.overflow = 'hidden'; // Prevent background scrolling
@@ -1436,9 +1544,9 @@ class AssetTracker {
 
     handleEditSubmit(e) {
         e.preventDefault();
-        
+
         if (!this.editingAssetId) return;
-        
+
         const updatedAsset = {
             id: this.editingAssetId,
             date: document.getElementById('editDate').value,
@@ -1455,6 +1563,7 @@ class AssetTracker {
             this.saveAssets();
             this.applyFilters();
             this.updateChart();
+            this.updateAllTrendCharts();
             this.updateTotalDisplay();
             this.updateSourceDropdown();
             if (this.currentView === 'calendar') {
@@ -1475,7 +1584,7 @@ class AssetTracker {
     toggleEditSourceDropdown() {
         const dropdown = document.getElementById('editSourceDropdown');
         const button = document.getElementById('editSourceDropdownBtn');
-        
+
         if (dropdown.classList.contains('show')) {
             this.closeEditSourceDropdown();
         } else {
@@ -1488,7 +1597,7 @@ class AssetTracker {
     closeEditSourceDropdown() {
         const dropdown = document.getElementById('editSourceDropdown');
         const button = document.getElementById('editSourceDropdownBtn');
-        
+
         if (dropdown && button) {
             dropdown.classList.remove('show');
             button.classList.remove('active');
@@ -1498,14 +1607,14 @@ class AssetTracker {
     populateEditSourceDropdown() {
         const container = document.querySelector('#editSourceDropdown .source-options');
         const uniqueSources = new Set();
-        
+
         // Get all unique sources from assets
         this.assets.forEach(asset => {
             uniqueSources.add(asset.name);
         });
 
         container.innerHTML = '';
-        
+
         if (uniqueSources.size === 0) {
             container.innerHTML = '<div class="no-sources">尚無歷史來源</div>';
             return;
@@ -1513,7 +1622,7 @@ class AssetTracker {
 
         // Sort sources alphabetically
         const sortedSources = Array.from(uniqueSources).sort();
-        
+
         sortedSources.forEach(source => {
             const option = document.createElement('div');
             option.className = 'source-option';
@@ -1534,7 +1643,7 @@ class AssetTracker {
 
     switchView(view) {
         this.currentView = view;
-        
+
         if (view === 'calendar') {
             document.getElementById('calendarView').style.display = 'block';
             document.getElementById('tableView').style.display = 'none';
@@ -1556,17 +1665,17 @@ class AssetTracker {
 
     setCalendarDisplayMode(mode) {
         this.calendarDisplayMode = mode;
-        
+
         // Update button states
         const totalAssetsBtn = document.getElementById('showTotalAssetsBtn');
         const dailyChangeBtn = document.getElementById('showDailyChangeBtn');
         const bothBtn = document.getElementById('showBothBtn');
-        
+
         // Remove active class from all buttons
         totalAssetsBtn.classList.remove('active');
         dailyChangeBtn.classList.remove('active');
         bothBtn.classList.remove('active');
-        
+
         // Add active class to selected button
         if (mode === 'totalAssets') {
             totalAssetsBtn.classList.add('active');
@@ -1575,7 +1684,7 @@ class AssetTracker {
         } else if (mode === 'both') {
             bothBtn.classList.add('active');
         }
-        
+
         // Re-render calendar with new display mode
         this.renderCalendar();
     }
@@ -1583,31 +1692,31 @@ class AssetTracker {
     renderCalendar() {
         const year = this.currentCalendarDate.getFullYear();
         const month = this.currentCalendarDate.getMonth();
-        
+
         // Update header
         const monthNames = [
             '1月', '2月', '3月', '4月', '5月', '6月',
             '7月', '8月', '9月', '10月', '11月', '12月'
         ];
         document.getElementById('currentMonth').textContent = `${year}年 ${monthNames[month]}`;
-        
+
         // Update monthly revenue
         this.updateMonthlyRevenue(year, month);
-        
+
         // Get calendar data
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay());
-        
+
         const calendarDays = document.getElementById('calendarDays');
         calendarDays.innerHTML = '';
-        
+
         // Generate calendar days
         for (let i = 0; i < 42; i++) { // 6 weeks
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + i);
-            
+
             const dayElement = this.createCalendarDay(date, month);
             calendarDays.appendChild(dayElement);
         }
@@ -1616,12 +1725,12 @@ class AssetTracker {
     createCalendarDay(date, currentMonth) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'calendar-day';
-        
+
         const isCurrentMonth = date.getMonth() === currentMonth;
         const isToday = this.isToday(date);
         const dateString = this.formatLocalDate(date);
         const dayAssets = this.assets.filter(asset => asset.date === dateString);
-        
+
         // Add classes
         if (!isCurrentMonth) {
             dayDiv.classList.add('other-month');
@@ -1631,18 +1740,18 @@ class AssetTracker {
         }
         if (dayAssets.length > 0) {
             dayDiv.classList.add('has-data');
-            
+
             // Calculate daily change for color coding
             const currentTotal = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
             const previousDate = new Date(date);
             previousDate.setDate(date.getDate() - 1);
             const previousDateString = this.formatLocalDate(previousDate);
             const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
-            
+
             if (previousAssets.length > 0) {
                 const previousTotal = previousAssets.reduce((sum, asset) => sum + asset.amount, 0);
                 const change = currentTotal - previousTotal;
-                
+
                 if (change > 0) {
                     dayDiv.classList.add('has-gain');
                 } else if (change < 0) {
@@ -1650,25 +1759,25 @@ class AssetTracker {
                 }
             }
         }
-        
+
         // Day number
         const dayNumber = document.createElement('div');
         dayNumber.className = 'day-number';
         dayNumber.textContent = date.getDate();
         dayDiv.appendChild(dayNumber);
-        
+
         // Assets info
         if (dayAssets.length > 0 && isCurrentMonth) {
             const dayAssetsDiv = document.createElement('div');
             dayAssetsDiv.className = 'day-assets';
-            
+
             if (this.calendarDisplayMode === 'totalAssets') {
                 // Asset count
                 const assetCount = document.createElement('div');
                 assetCount.className = 'asset-count';
                 assetCount.textContent = `${dayAssets.length}筆`;
                 dayAssetsDiv.appendChild(assetCount);
-                
+
                 // Total amount
                 const totalAmount = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
                 const totalDiv = document.createElement('div');
@@ -1683,14 +1792,14 @@ class AssetTracker {
                 const previousDateString = this.formatLocalDate(previousDate);
                 const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
                 const previousTotal = previousAssets.reduce((sum, asset) => sum + asset.amount, 0);
-                
+
                 const changeDiv = document.createElement('div');
                 changeDiv.className = 'daily-change-display';
-                
+
                 if (previousAssets.length > 0) {
                     const change = currentTotal - previousTotal;
                     const changePercent = previousTotal !== 0 ? ((change / previousTotal) * 100) : 0;
-                    
+
                     if (change > 0) {
                         changeDiv.classList.add('positive');
                         changeDiv.innerHTML = `<div class="change-label">增加</div><div class="change-amount">+${change.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}</div><div class="change-percent">+${changePercent.toFixed(1)}%</div>`;
@@ -1705,29 +1814,29 @@ class AssetTracker {
                     changeDiv.classList.add('neutral');
                     changeDiv.innerHTML = `<div class="change-label">首日</div><div class="change-amount">--</div>`;
                 }
-                
+
                 dayAssetsDiv.appendChild(changeDiv);
             } else if (this.calendarDisplayMode === 'both') {
                 // Show both total assets and daily change
                 dayAssetsDiv.classList.add('both-mode');
-                
+
                 // Total assets section
                 const totalSection = document.createElement('div');
                 totalSection.className = 'total-section';
-                
+
                 const assetCount = document.createElement('div');
                 assetCount.className = 'asset-count';
                 assetCount.textContent = `${dayAssets.length}筆`;
                 totalSection.appendChild(assetCount);
-                
+
                 const totalAmount = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
                 const totalDiv = document.createElement('div');
                 totalDiv.className = 'total-amount';
                 totalDiv.textContent = `${totalAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 })}`;
                 totalSection.appendChild(totalDiv);
-                
+
                 dayAssetsDiv.appendChild(totalSection);
-                
+
                 // Daily change section
                 const currentTotal = dayAssets.reduce((sum, asset) => sum + asset.amount, 0);
                 const previousDate = new Date(date);
@@ -1735,14 +1844,14 @@ class AssetTracker {
                 const previousDateString = this.formatLocalDate(previousDate);
                 const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
                 const previousTotal = previousAssets.reduce((sum, asset) => sum + asset.amount, 0);
-                
+
                 const changeSection = document.createElement('div');
                 changeSection.className = 'change-section';
-                
+
                 if (previousAssets.length > 0) {
                     const change = currentTotal - previousTotal;
                     const changePercent = previousTotal !== 0 ? ((change / previousTotal) * 100) : 0;
-                    
+
                     if (change > 0) {
                         changeSection.classList.add('positive');
                         changeSection.innerHTML = `<div class="change-indicator">+${change.toLocaleString('zh-TW', { maximumFractionDigits: 0 })} (+${changePercent.toFixed(1)}%)</div>`;
@@ -1757,20 +1866,20 @@ class AssetTracker {
                     changeSection.classList.add('neutral');
                     changeSection.innerHTML = `<div class="change-indicator">首日</div>`;
                 }
-                
+
                 dayAssetsDiv.appendChild(changeSection);
             }
-            
+
             dayDiv.appendChild(dayAssetsDiv);
         }
-        
+
         // Click handler
         if (dayAssets.length > 0 && isCurrentMonth) {
             dayDiv.addEventListener('click', () => {
                 this.showDailyDetails(dateString, dayAssets);
             });
         }
-        
+
         return dayDiv;
     }
 
@@ -1781,34 +1890,34 @@ class AssetTracker {
 
     showDailyDetails(dateString, assets) {
         const date = this.parseDateString(dateString) || new Date(dateString);
-        const formattedDate = date.toLocaleDateString('zh-TW', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        const formattedDate = date.toLocaleDateString('zh-TW', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         });
-        
+
         // Update modal title
         document.getElementById('dailyDetailsTitle').textContent = `${formattedDate} 資產詳情`;
-        
+
         // Calculate totals
         const totalAmount = assets.reduce((sum, asset) => sum + asset.amount, 0);
         document.getElementById('dailyTotal').textContent = `${totalAmount.toLocaleString('zh-TW')} USDT`;
-        
+
         // Calculate daily change
         const previousDate = new Date(date);
         previousDate.setDate(date.getDate() - 1);
         const previousDateString = this.formatLocalDate(previousDate);
         const previousAssets = this.assets.filter(asset => asset.date === previousDateString);
         const previousTotal = previousAssets.reduce((sum, asset) => sum + asset.amount, 0);
-        
+
         const dailyChangeElement = document.getElementById('dailyChange');
         if (previousAssets.length > 0) {
             const change = totalAmount - previousTotal;
             const changePercent = previousTotal !== 0 ? ((change / previousTotal) * 100) : 0;
-            const changeText = change >= 0 ? 
+            const changeText = change >= 0 ?
                 `+${change.toLocaleString('zh-TW')} (+${changePercent.toFixed(2)}%)` :
                 `${change.toLocaleString('zh-TW')} (${changePercent.toFixed(2)}%)`;
-            
+
             dailyChangeElement.textContent = changeText;
             if (change > 0) {
                 dailyChangeElement.className = 'value daily-change positive';
@@ -1821,20 +1930,20 @@ class AssetTracker {
             dailyChangeElement.textContent = '--';
             dailyChangeElement.className = 'value daily-change neutral';
         }
-        
+
         // Populate assets list
         const assetsList = document.getElementById('dailyAssetsList');
         assetsList.innerHTML = '';
-        
+
         assets.forEach(asset => {
             const assetItem = document.createElement('div');
             assetItem.className = 'asset-item';
-            
+
             const assetChange = this.calculateDailyChange(asset);
-            
+
             const notes = asset.notes || '';
             const notesDisplay = notes ? `<div class="asset-notes">${notes}</div>` : '';
-            
+
             assetItem.innerHTML = `
                 <div class="asset-info">
                     <div class="asset-name">${asset.name}</div>
@@ -1850,10 +1959,10 @@ class AssetTracker {
                     <button class="delete-btn" onclick="assetTracker.deleteAsset(${asset.id})">刪除</button>
                 </div>
             `;
-            
+
             assetsList.appendChild(assetItem);
         });
-        
+
         // Show modal
         document.getElementById('dailyDetailsModal').classList.add('show');
         document.body.style.overflow = 'hidden';
@@ -1867,7 +1976,7 @@ class AssetTracker {
     toggleYAxis() {
         this.yAxisVisible = !this.yAxisVisible;
         const button = document.getElementById('toggleYAxis');
-        
+
         if (this.yAxisVisible) {
             button.textContent = '隱藏Y軸數字';
             button.classList.remove('active');
@@ -1875,7 +1984,7 @@ class AssetTracker {
             button.textContent = '顯示Y軸數字';
             button.classList.add('active');
         }
-        
+
         this.updateChart();
     }
 
@@ -1922,10 +2031,10 @@ class AssetTracker {
         if (!this.sortConfig.column || !this.sortConfig.direction) return;
 
         const { column, direction } = this.sortConfig;
-        
+
         this.filteredAssets.sort((a, b) => {
             let aValue, bValue;
-            
+
             switch (column) {
                 case 'date':
                     aValue = this.parseDateString(a.date)?.getTime() ?? Number.NaN;
@@ -1991,17 +2100,18 @@ class AssetTracker {
     toggleDarkMode() {
         this.darkMode = !this.darkMode;
         this.saveDarkModePreference();
-        
+
         if (this.darkMode) {
             document.body.classList.add('dark-mode');
         } else {
             document.body.classList.remove('dark-mode');
         }
-        
+
         this.updateDarkModeIcon();
-        
+
         // Update chart colors after theme change
         this.updateChart();
+        this.updateAllTrendCharts();
     }
 
     updateDarkModeIcon() {
@@ -2102,13 +2212,586 @@ class AssetTracker {
             revenueElement.innerHTML = `<span class="neutral">0 USDT</span>`;
         }
     }
+
+    // ========================================
+    // Trend Charts Methods
+    // ========================================
+
+    updateAllTrendCharts() {
+        this.updateSourceTrendChart();
+        this.updateMonthlyTrendChart();
+        this.updateYearlyTrendChart();
+    }
+
+    updateSourceTrendChart() {
+        const timeRange = document.getElementById('sourceTrendTimeRange').value;
+        const filteredAssets = this.getFilteredAssetsForTrend(timeRange);
+
+        // Update source select dropdown options
+        this.updateSourceSelectOptions(filteredAssets);
+
+        if (filteredAssets.length === 0) {
+            this.renderEmptyChart('sourceTrendChart', '來源別趨勢圖', 'sourceTrendChart');
+            return;
+        }
+
+        // Get selected source from select element
+        const selectedSource = document.getElementById('sourceTrendSourceSelect').value;
+
+        // Filter assets by selected source (if not 'all')
+        let assetsToChart = filteredAssets;
+        if (selectedSource !== 'all') {
+            assetsToChart = filteredAssets.filter(a => a.name === selectedSource);
+        }
+
+        if (assetsToChart.length === 0) {
+            this.renderEmptyChart('sourceTrendChart', '來源別趨勢圖', 'sourceTrendChart');
+            return;
+        }
+
+        const chartData = this.prepareSourceTrendData(assetsToChart);
+
+        if (this.sourceTrendChart) {
+            this.sourceTrendChart.destroy();
+        }
+
+        const ctx = document.getElementById('sourceTrendChart').getContext('2d');
+        this.sourceTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: chartData,
+            options: this.getSourceTrendOptions()
+        });
+    }
+
+    updateSourceSelectOptions(assets) {
+        const selectElement = document.getElementById('sourceTrendSourceSelect');
+        const sources = [...new Set(assets.map(a => a.name))].sort();
+
+        // Remember current selection
+        const currentSelection = selectElement.value;
+
+        // Clear and repopulate options (keep "全部來源" option)
+        selectElement.innerHTML = '<option value="all">全部來源</option>';
+
+        sources.forEach(source => {
+            const option = document.createElement('option');
+            option.value = source;
+            option.textContent = source;
+            selectElement.appendChild(option);
+        });
+
+        // Restore selection if it still exists
+        if (currentSelection && (currentSelection === 'all' || sources.includes(currentSelection))) {
+            selectElement.value = currentSelection;
+        }
+    }
+
+    prepareSourceTrendData(assets) {
+        // Get unique sources
+        const sources = [...new Set(assets.map(a => a.name))];
+
+        // Get unique dates sorted
+        const dates = [...new Set(assets.map(a => a.date))].sort();
+
+        // Color palette for sources
+        const colors = [
+            { bg: 'rgba(102, 126, 234, 0.8)', border: 'rgba(102, 126, 234, 1)' },
+            { bg: 'rgba(118, 75, 162, 0.8)', border: 'rgba(118, 75, 162, 1)' },
+            { bg: 'rgba(255, 99, 132, 0.8)', border: 'rgba(255, 99, 132, 1)' },
+            { bg: 'rgba(54, 162, 235, 0.8)', border: 'rgba(54, 162, 235, 1)' },
+            { bg: 'rgba(255, 205, 86, 0.8)', border: 'rgba(255, 205, 86, 1)' },
+            { bg: 'rgba(75, 192, 192, 0.8)', border: 'rgba(75, 192, 192, 1)' },
+            { bg: 'rgba(153, 102, 255, 0.8)', border: 'rgba(153, 102, 255, 1)' },
+            { bg: 'rgba(255, 159, 64, 0.8)', border: 'rgba(255, 159, 64, 1)' }
+        ];
+
+        const datasets = sources.map((source, index) => {
+            const colorIndex = index % colors.length;
+            const data = dates.map(date => {
+                const dayAssets = assets.filter(a => a.date === date && a.name === source);
+                return dayAssets.reduce((sum, a) => sum + a.amount, 0) || null;
+            });
+
+            return {
+                label: source,
+                data: data,
+                borderColor: colors[colorIndex].border,
+                backgroundColor: colors[colorIndex].bg,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.3,
+                spanGaps: true,
+                pointRadius: 3,
+                pointHoverRadius: 5
+            };
+        });
+
+        return {
+            labels: dates,
+            datasets: datasets
+        };
+    }
+
+    getSourceTrendOptions() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#f0f0f0' : '#666';
+        const gridColor = isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)';
+
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                title: {
+                    display: false
+                },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        boxWidth: 12,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    callbacks: {
+                        label: (context) => {
+                            if (context.parsed.y !== null) {
+                                return `${context.dataset.label}: ${context.parsed.y.toLocaleString('zh-TW')} USDT`;
+                            }
+                            return null;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    ticks: { color: textColor, font: { size: 10 } },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    display: true,
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 },
+                        callback: (value) => value.toLocaleString('zh-TW')
+                    },
+                    grid: { color: gridColor }
+                }
+            }
+        };
+    }
+
+    updateMonthlyTrendChart() {
+        const timeRange = document.getElementById('monthlyTrendTimeRange').value;
+        const chartData = this.prepareMonthlyTrendData(timeRange);
+
+        if (chartData.labels.length === 0) {
+            this.renderEmptyChart('monthlyTrendChart', '月份趨勢圖', 'monthlyTrendChart');
+            return;
+        }
+
+        if (this.monthlyTrendChart) {
+            this.monthlyTrendChart.destroy();
+        }
+
+        const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+        this.monthlyTrendChart = new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: this.getMonthlyTrendOptions()
+        });
+    }
+
+    prepareMonthlyTrendData(timeRange) {
+        if (this.assets.length === 0) {
+            return { labels: [], datasets: [] };
+        }
+
+        // Group assets by month (YYYY-MM)
+        const monthlyData = {};
+
+        this.assets.forEach(asset => {
+            const month = asset.date.substring(0, 7); // YYYY-MM
+            if (!monthlyData[month]) {
+                monthlyData[month] = {};
+            }
+            if (!monthlyData[month][asset.date]) {
+                monthlyData[month][asset.date] = 0;
+            }
+            monthlyData[month][asset.date] += asset.amount;
+        });
+
+        // Get the last day total for each month
+        let months = Object.keys(monthlyData).sort();
+
+        // Apply time range filter
+        if (timeRange !== 'all') {
+            const numMonths = parseInt(timeRange);
+            months = months.slice(-numMonths);
+        }
+
+        const monthTotals = months.map(month => {
+            const dates = Object.keys(monthlyData[month]).sort();
+            const lastDate = dates[dates.length - 1];
+
+            // Get total for the last date in this month
+            const lastDateAssets = this.assets.filter(a => a.date === lastDate);
+            return lastDateAssets.reduce((sum, a) => sum + a.amount, 0);
+        });
+
+        // Calculate monthly changes
+        const monthlyChanges = monthTotals.map((total, index) => {
+            if (index === 0) return 0;
+            return total - monthTotals[index - 1];
+        });
+
+        return {
+            labels: months.map(m => {
+                const [year, month] = m.split('-');
+                return `${year}/${month}`;
+            }),
+            datasets: [
+                {
+                    label: '月底資產總值',
+                    data: monthTotals,
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                    order: 2
+                },
+                {
+                    label: '月度變化',
+                    data: monthlyChanges,
+                    type: 'line',
+                    borderColor: monthlyChanges.map(c => c >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'),
+                    backgroundColor: monthlyChanges.map(c => c >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)'),
+                    pointBackgroundColor: monthlyChanges.map(c => c >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'),
+                    borderWidth: 2,
+                    tension: 0.3,
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ]
+        };
+    }
+
+    getMonthlyTrendOptions() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#f0f0f0' : '#666';
+        const gridColor = isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)';
+
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        boxWidth: 12,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
+                    callbacks: {
+                        label: (context) => {
+                            const value = context.parsed.y;
+                            const sign = value >= 0 ? '+' : '';
+                            if (context.datasetIndex === 1) {
+                                return `月度變化: ${sign}${value.toLocaleString('zh-TW')} USDT`;
+                            }
+                            return `月底資產: ${value.toLocaleString('zh-TW')} USDT`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    ticks: { color: textColor, font: { size: 10 } },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '月底總資產',
+                        color: textColor,
+                        font: { size: 10 }
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 },
+                        callback: (value) => value.toLocaleString('zh-TW')
+                    },
+                    grid: { color: gridColor }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '月度變化',
+                        color: textColor,
+                        font: { size: 10 }
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 },
+                        callback: (value) => {
+                            const sign = value >= 0 ? '+' : '';
+                            return `${sign}${value.toLocaleString('zh-TW')}`;
+                        }
+                    },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        };
+    }
+
+    updateYearlyTrendChart() {
+        const chartData = this.prepareYearlyTrendData();
+
+        if (chartData.labels.length === 0) {
+            this.renderEmptyChart('yearlyTrendChart', '年度趨勢圖', 'yearlyTrendChart');
+            return;
+        }
+
+        if (this.yearlyTrendChart) {
+            this.yearlyTrendChart.destroy();
+        }
+
+        const ctx = document.getElementById('yearlyTrendChart').getContext('2d');
+        this.yearlyTrendChart = new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: this.getYearlyTrendOptions()
+        });
+    }
+
+    prepareYearlyTrendData() {
+        if (this.assets.length === 0) {
+            return { labels: [], datasets: [] };
+        }
+
+        // Group assets by year
+        const yearlyData = {};
+
+        this.assets.forEach(asset => {
+            const year = asset.date.substring(0, 4);
+            if (!yearlyData[year]) {
+                yearlyData[year] = {};
+            }
+            if (!yearlyData[year][asset.date]) {
+                yearlyData[year][asset.date] = 0;
+            }
+            yearlyData[year][asset.date] += asset.amount;
+        });
+
+        const years = Object.keys(yearlyData).sort();
+
+        // Get the last day total for each year
+        const yearTotals = years.map(year => {
+            const dates = Object.keys(yearlyData[year]).sort();
+            const lastDate = dates[dates.length - 1];
+            const lastDateAssets = this.assets.filter(a => a.date === lastDate);
+            return lastDateAssets.reduce((sum, a) => sum + a.amount, 0);
+        });
+
+        // Calculate yearly changes
+        const yearlyChanges = yearTotals.map((total, index) => {
+            if (index === 0) return 0;
+            return total - yearTotals[index - 1];
+        });
+
+        return {
+            labels: years.map(y => `${y}年`),
+            datasets: [
+                {
+                    label: '年底資產總值',
+                    data: yearTotals,
+                    backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                    borderColor: 'rgba(118, 75, 162, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y',
+                    order: 2
+                },
+                {
+                    label: '年度變化',
+                    data: yearlyChanges,
+                    type: 'line',
+                    borderColor: yearlyChanges.map(c => c >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'),
+                    backgroundColor: 'transparent',
+                    pointBackgroundColor: yearlyChanges.map(c => c >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'),
+                    borderWidth: 3,
+                    tension: 0.3,
+                    yAxisID: 'y1',
+                    order: 1
+                }
+            ]
+        };
+    }
+
+    getYearlyTrendOptions() {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#f0f0f0' : '#666';
+        const gridColor = isDarkMode ? '#4a5568' : 'rgba(0,0,0,0.1)';
+
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        boxWidth: 12,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
+                    callbacks: {
+                        label: (context) => {
+                            const value = context.parsed.y;
+                            const sign = value >= 0 ? '+' : '';
+                            if (context.datasetIndex === 1) {
+                                return `年度變化: ${sign}${value.toLocaleString('zh-TW')} USDT`;
+                            }
+                            return `年底資產: ${value.toLocaleString('zh-TW')} USDT`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    ticks: { color: textColor, font: { size: 11 } },
+                    grid: { color: gridColor }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '年底總資產',
+                        color: textColor,
+                        font: { size: 10 }
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 },
+                        callback: (value) => value.toLocaleString('zh-TW')
+                    },
+                    grid: { color: gridColor }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '年度變化',
+                        color: textColor,
+                        font: { size: 10 }
+                    },
+                    ticks: {
+                        color: textColor,
+                        font: { size: 10 },
+                        callback: (value) => {
+                            const sign = value >= 0 ? '+' : '';
+                            return `${sign}${value.toLocaleString('zh-TW')}`;
+                        }
+                    },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        };
+    }
+
+    getFilteredAssetsForTrend(timeRange) {
+        if (timeRange === 'all') return this.assets;
+
+        const days = parseInt(timeRange);
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+
+        return this.assets.filter(asset => {
+            const assetDate = this.parseDateString(asset.date);
+            return assetDate && assetDate >= cutoffDate;
+        });
+    }
+
+    renderEmptyChart(chartId, title, chartProperty) {
+        const chart = this[chartProperty];
+        if (chart) {
+            chart.destroy();
+        }
+
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? '#f0f0f0' : '#666';
+
+        const ctx = document.getElementById(chartId).getContext('2d');
+        this[chartProperty] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['無數據'],
+                datasets: [{
+                    data: [0],
+                    backgroundColor: isDarkMode ? 'rgba(74, 85, 104, 0.5)' : 'rgba(200, 200, 200, 0.5)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: '尚無資料',
+                        color: textColor,
+                        font: { size: 14 }
+                    }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { display: false }
+                }
+            }
+        });
+    }
 }
 
 let assetTracker;
 
 document.addEventListener('DOMContentLoaded', () => {
     assetTracker = new AssetTracker();
-    
+
     if (assetTracker.assets.length === 0) {
         setTimeout(() => {
             if (confirm('是否要載入示例數據來體驗功能？')) {

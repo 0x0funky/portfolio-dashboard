@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -22,7 +24,7 @@
             <div class="total-display">
                 <h3>總資產: <span id="totalAssets">0</span> USDT</h3>
             </div>
-            
+
             <div class="main-content">
                 <section class="input-section">
                     <h2>新增資產數據</h2>
@@ -31,7 +33,7 @@
                             <label for="date">日期:</label>
                             <input type="date" id="date" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="assetName">來源:</label>
                             <div class="source-input-container">
@@ -44,12 +46,12 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="amount">金額:</label>
                             <input type="number" id="amount" step="0.01" placeholder="0.00" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="currency">計價貨幣:</label>
                             <select id="currency">
@@ -60,12 +62,12 @@
                                 <option value="TWD">TWD</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="notes">備註:</label>
                             <textarea id="notes" placeholder="選填備註資訊..." rows="2"></textarea>
                         </div>
-                        
+
                         <button type="submit">新增資產</button>
                     </form>
                 </section>
@@ -82,13 +84,68 @@
                             <option value="7">最近7天</option>
                             <option value="30">最近30天</option>
                             <option value="90">最近90天</option>
+                            <option value="month">按月份</option>
                             <option value="all">全部</option>
                         </select>
+                        <input type="month" id="monthPicker" style="display: none;">
                         <button id="toggleYAxis" class="toggle-y-axis-btn">隱藏Y軸數字</button>
                     </div>
                     <canvas id="assetChart"></canvas>
                 </section>
             </div>
+
+            <!-- Trend Charts Section -->
+            <section class="trend-charts-section">
+                <h2>進階趨勢分析</h2>
+                <div class="trend-charts-grid">
+                    <!-- Source Trend Chart -->
+                    <div class="trend-chart-card">
+                        <div class="trend-chart-header">
+                            <h3>來源別趨勢圖</h3>
+                            <div class="trend-chart-controls">
+                                <select id="sourceTrendSourceSelect" class="trend-source-select">
+                                    <option value="all">全部來源</option>
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                                <select id="sourceTrendTimeRange" class="trend-time-select">
+                                    <option value="30">最近30天</option>
+                                    <option value="90">最近90天</option>
+                                    <option value="180">最近180天</option>
+                                    <option value="all" selected>全部</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="trend-chart-container">
+                            <canvas id="sourceTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Trend Chart -->
+                    <div class="trend-chart-card">
+                        <div class="trend-chart-header">
+                            <h3>月份趨勢圖</h3>
+                            <select id="monthlyTrendTimeRange" class="trend-time-select">
+                                <option value="6">最近6個月</option>
+                                <option value="12" selected>最近12個月</option>
+                                <option value="all">全部</option>
+                            </select>
+                        </div>
+                        <div class="trend-chart-container">
+                            <canvas id="monthlyTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Yearly Trend Chart -->
+                    <div class="trend-chart-card">
+                        <div class="trend-chart-header">
+                            <h3>年度趨勢圖</h3>
+                        </div>
+                        <div class="trend-chart-container">
+                            <canvas id="yearlyTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <section class="data-section">
                 <h2>資產數據管理</h2>
@@ -105,7 +162,7 @@
                     <button id="calendarViewBtn" class="view-btn active">日曆檢視</button>
                     <button id="tableViewBtn" class="view-btn">表格檢視</button>
                 </div>
-                
+
                 <!-- Calendar View -->
                 <div id="calendarView" class="calendar-view">
                     <div class="calendar-header">
@@ -247,7 +304,7 @@
                     <label for="editDate">日期:</label>
                     <input type="date" id="editDate" required>
                 </div>
-                
+
                 <div class="edit-form-group">
                     <label for="editAssetName">來源:</label>
                     <div class="source-input-container">
@@ -260,12 +317,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="edit-form-group">
                     <label for="editAmount">金額:</label>
                     <input type="number" id="editAmount" step="0.01" placeholder="0.00" required>
                 </div>
-                
+
                 <div class="edit-form-group">
                     <label for="editCurrency">計價貨幣:</label>
                     <select id="editCurrency">
@@ -276,12 +333,12 @@
                         <option value="TWD">TWD</option>
                     </select>
                 </div>
-                
+
                 <div class="edit-form-group">
                     <label for="editNotes">備註:</label>
                     <textarea id="editNotes" placeholder="選填備註資訊..." rows="2"></textarea>
                 </div>
-                
+
                 <div class="edit-modal-buttons">
                     <button type="button" id="cancelEditBtn" class="cancel-btn">取消</button>
                     <button type="submit" id="saveEditBtn" class="save-btn">儲存</button>
@@ -320,4 +377,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
